@@ -18,7 +18,7 @@ module lutalm_mul_s8_registered #(
     parameter integer ROUND_MODE   = 1,
     parameter integer ADAPTIVE_LUT = 0,
     parameter integer USE_CARRY    = 1,
-    parameter integer QUAD_CURV    = 1
+    parameter integer QUAD_CURV    = 0
 )(
     input  wire               clk,
     input  wire               rst_n,

@@ -7,14 +7,14 @@
  */
 
 module log_input_sign_u8 (
-    input  wire [7:0] data_i,
-    output wire [7:0] mag_o,
-    output wire       sign_o,
-    output wire       zero_o
+    input  wire signed [7:0] data_i,
+    output wire [7:0]        mag_o,
+    output wire              sign_o,
+    output wire              zero_o
 );
 
     assign sign_o = data_i[7];
-    assign zero_o = (data_i == 8'd0);
-    assign mag_o  = sign_o ? (~data_i + 8'd1) : data_i;
+    assign zero_o = (data_i == 8'sd0);
+    assign mag_o  = sign_o ? (-data_i) : data_i;
 
 endmodule
