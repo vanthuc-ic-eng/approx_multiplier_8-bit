@@ -26,7 +26,8 @@ module lutalm_mul_s8 #(
     parameter integer TRUNC_BITS   = 4,
     parameter integer ROUND_MODE   = 1,
     parameter integer ADAPTIVE_LUT = 0,
-    parameter integer USE_CARRY    = 1
+    parameter integer USE_CARRY    = 1,
+    parameter integer QUAD_CURV    = 1
 )(
     input  wire signed [7:0]  a_i,
     input  wire signed [7:0]  b_i,
@@ -90,7 +91,8 @@ module lutalm_mul_s8 #(
     endgenerate
 
     log_antilog_u16 #(
-        .LOW_W             ( LOW_W                  )
+        .LOW_W             ( LOW_W                  ),
+        .QUAD_CURV         ( QUAD_CURV              )
     ) u_antilog (
         .log_sum_i         ( log_sum_w              ),
         .product_o         ( approx_mag_w           )

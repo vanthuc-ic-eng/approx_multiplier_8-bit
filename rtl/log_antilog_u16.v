@@ -9,7 +9,8 @@
  */
 
 module log_antilog_u16 #(
-    parameter integer LOW_W = 3
+    parameter integer LOW_W     = 3,
+    parameter integer QUAD_CURV = 1
 )(
     input  wire [LOW_W+6:0] log_sum_i,
     output reg  [15:0]      product_o
@@ -17,11 +18,24 @@ module log_antilog_u16 #(
 
     localparam integer F = 3 + LOW_W;
 
-    wire [3:0] exponent_w;
-    wire [F:0] mantissa_w;
+    wire [3:0] exponent_w = log_sum_i[F+3:F];
+    wire [F-1:0] frac_s   = log_sum_i[F-1:0];
 
-    assign exponent_w = log_sum_i[F+3:F];
-    assign mantissa_w = {1'b1, log_sum_i[F-1:0]};
+    // Direction 2: Piecewise Quadratic Curvature Correction (FQCL)
+    // Symmetrical folded logic: q_fold = yh[1:0] ^ {2{yh[2]}}
+    // Corrects for 2^x antilog curvature without any DSP or multiplier.
+    wire [1:0] q_corr_w;
+    generate
+        if (QUAD_CURV && LOW_W == 3) begin : gen_quad_curv
+            wire [2:0] yh = frac_s[5:3];
+            wire [1:0] q_fold = yh[1:0] ^ {2{yh[2]}};
+            assign q_corr_w = q_fold >> 1; // 1-bit parabolic correction [0, 0, 1, 1, 1, 1, 0, 0]
+        end else begin : gen_linear
+            assign q_corr_w = 2'b00;
+        end
+    endgenerate
+
+    wire [F:0] mantissa_w = {1'b1, frac_s} - {{(F-1){1'b0}}, q_corr_w};
 
     generate
         if (LOW_W == 2) begin : gen_antilog_low2

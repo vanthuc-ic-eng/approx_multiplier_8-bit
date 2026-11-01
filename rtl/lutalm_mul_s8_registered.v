@@ -17,7 +17,8 @@ module lutalm_mul_s8_registered #(
     parameter integer TRUNC_BITS   = 4,
     parameter integer ROUND_MODE   = 1,
     parameter integer ADAPTIVE_LUT = 0,
-    parameter integer USE_CARRY    = 1
+    parameter integer USE_CARRY    = 1,
+    parameter integer QUAD_CURV    = 1
 )(
     input  wire               clk,
     input  wire               rst_n,
@@ -36,7 +37,8 @@ module lutalm_mul_s8_registered #(
         .TRUNC_BITS        ( TRUNC_BITS             ),
         .ROUND_MODE        ( ROUND_MODE             ),
         .ADAPTIVE_LUT      ( ADAPTIVE_LUT           ),
-        .USE_CARRY         ( USE_CARRY              )
+        .USE_CARRY         ( USE_CARRY              ),
+        .QUAD_CURV         ( QUAD_CURV              )
     ) u_core (
         .a_i               ( a_reg                  ),
         .b_i               ( b_reg                  ),
