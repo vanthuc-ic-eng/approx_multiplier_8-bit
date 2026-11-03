@@ -63,7 +63,10 @@ help:
 	@echo "   make fpga             Run AMD Vivado Physical Implementation (P&R, STA, Power)"
 	@echo "   make all              Run all 3 benchmarks sequentially for this version"
 	@echo ""
-	@echo " Hardware On-Board Deployment Commands:"
+	@echo " Hardware On-Board Deployment & GUI Commands:"
+	@echo "   make vivado           Open Vivado GUI with mult8bit_v3.xpr project"
+	@echo "   make schematic        Directly launch Vivado GUI and display RTL Schematic"
+	@echo "   make vivado-proj      Re-generate the Vivado .xpr project file"
 	@echo "   make bitstream        Build physical .bit file for Digilent Zybo Z-7010 board"
 	@echo "   make program          1-Click JTAG flash bitstream directly to board hardware"
 	@echo ""
@@ -127,7 +130,16 @@ fpga:
 
 all: accuracy asic fpga report
 
-# --- 3. Hardware Deployment Targets ---
+# --- 3. Hardware Deployment & Vivado GUI Targets ---
+
+vivado-proj:
+	@vivado -mode batch -source scripts/create_vivado_project.tcl
+
+vivado: vivado/mult8bit_v3.xpr
+	@vivado vivado/mult8bit_v3.xpr &
+
+schematic:
+	@vivado -mode gui -source scripts/open_schematic.tcl &
 
 bitstream:
 	@bash scripts/build_bitstream.sh $(DUT_TYPE)
