@@ -43,7 +43,7 @@ GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BIT_FILE   := bitstream/mult_8bit.bit
 
 .PHONY: help all accuracy asic fpga clean \
-        report report-accuracy report-asic report-fpga report-timing info \
+        report report-accuracy report-func report-asic report-fpga report-timing info \
         bitstream program
 
 # Default target
@@ -69,6 +69,7 @@ help:
 	@echo ""
 	@echo " Report Inspection Commands (View specific metrics of this version):"
 	@echo "   make report           Display consolidated benchmark summary card"
+	@echo "   make report-func      Generate official functional verification report (.md, .docx, .csv)"
 	@echo "   make report-accuracy  Display MRED, Mean Error (MED), and Worst-Case Error"
 	@echo "   make report-asic      Display standard cell count and Nangate 45nm silicon area"
 	@echo "   make report-fpga      Display Slice LUTs, CARRY4, Levels, Delay, Fmax, Power"
@@ -135,6 +136,9 @@ program:
 	@bash scripts/program_fpga.sh $(BIT_FILE)
 
 # --- 4. Report Inspection Targets ---
+
+report-func:
+	@python3 scripts/generate_functional_report.py --arch $(TARGET) --trunc $(TRUNC) --quad $(QUAD)
 
 report-accuracy:
 	@python3 scripts/parse_summary.py --dir $(REPORT_DIR) --show accuracy
