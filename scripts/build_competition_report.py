@@ -4,17 +4,28 @@
 Official Competition Submission Report Builder
 "AI ACCELERATOR DESIGN CHALLENGE 2026" - TRACK 2: APPROXIMATE MULTIPLIER
 Conforms 100% to the Official Call for Submissions (THONG BAO NOP SAN PHAM VONG BAN KET).
-Generates both Markdown (.md) and professional Word (.docx) documents.
+Generates both Markdown (.md) and validated Word (.docx) documents.
 Author: NGUYEN VAN THUC - 24161421
 """
 
 import os
 import sys
 import zipfile
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 sys.path.append("/workspace/projects/mult_8bit/scripts")
 from generate_functional_report import run_exhaustive_verification
+
+def xml_escape(text):
+    if text is None:
+        return ""
+    return (str(text)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&apos;"))
 
 def build_competition_reports():
     data_v6 = run_exhaustive_verification("lutalm", 4, 0)
@@ -47,7 +58,7 @@ def build_competition_reports():
 Trong các bộ gia tốc AI phần cứng (NPU/Systolic Array cho CNN/Transformer), các phép nhân số nguyên có dấu 8-bit (Signed INT8) chiếm tới hơn **80% diện tích silicon và công suất tiêu thụ**.
 - **Kiến trúc thông thường (Baseline của Ban tổ chức):** Sử dụng mạng cộng ma trận tích từng phần tuyến tính (Array Multiplier / Baugh-Wooley). Mạch này yêu cầu tới **150 Slice LUTs** trên FPGA Xilinx 7-Series, độ trễ 10 tầng logic (9.814 ns) và tiêu hao 4.0 mW công suất động.
 - **Ý tưởng đột phá đề xuất:** Chuyển phép nhân từ miền tuyến tính sang **miền Logarithm (Logarithmic Number System - LNS)**:
-  $$|P| = |A| \times |B| \iff \log_2(|P|) = \log_2(|A|) + \log_2(|B|)$$
+  $$|P| = |A| \\times |B| \\iff \\log_2(|P|) = \\log_2(|A|) + \\log_2(|B|)$$
   Biến phép nhân phức tạp thành **phép cộng 1 tầng**, giúp cắt giảm hơn **51% số lượng LUTs** và giảm **gần 60% công suất** trên cả FPGA lẫn ASIC.
 
 ## 1.2. Kiến trúc và Sơ đồ Khối (Block Diagram)
@@ -75,21 +86,21 @@ Kiến trúc đề xuất bao gồm 5 khối chức năng được tối ưu hó
 
 ## 1.3. Công thức Toán học Cốt lõi
 1. **Chuẩn hóa nhị phân (Binary Normalization):**
-   Mọi toán hạng $|N| \in [1, 128]$ được phân rã dạng:
-   $$|N| = 2^k \cdot (1 + x)$$
-   với $k = \lfloor \log_2 |N| \rfloor$ (vị trí bit 1 cao nhất) và $x \in [0, 1)$ là mantissa.
+   Mọi toán hạng $|N| \\in [1, 128]$ được phân rã dạng:
+   $$|N| = 2^k \\cdot (1 + x)$$
+   với $k = \\lfloor \\log_2 |N| \\rfloor$ (vị trí bit 1 cao nhất) và $x \\in [0, 1)$ là mantissa.
 2. **Khắc phục triệt để sai số của Mitchell bằng Vi hiệu chỉnh Micro-LUT:**
-   Thuật toán cổ điển Mitchell (1962) đặt $\log_2(1+x) \approx x$ gây sai số tương đối cực đại lên tới $11.1\%$ (vượt xa trần cho phép $3.2\%$). Thiết kế đề xuất phân rã mantissa thành 3 bit cao $x_H$ và 3 bit thấp $x_L = \text{addr}$, sau đó áp dụng bảng bù độ cong tối ưu hóa rời rạc toàn cục:
-   $$\text{log\_frac} = \{x_H, \text{LUT}_{\text{low3}}[x_L]\}$$
-   Bảng $\text{LUT}_{\text{low3}} = \{1, 3, 4, 4, 6, 6, 7, 7\}$ vừa khớp đường cong logarit, vừa cộng gộp sẵn địa chỉ `addr` để **loại bỏ 100% bộ cộng phần cứng**.
+   Thuật toán cổ điển Mitchell (1962) đặt $\\log_2(1+x) \\approx x$ gây sai số tương đối cực đại lên tới $11.1\\%$ (vượt xa trần cho phép $3.2\\%$). Thiết kế đề xuất phân rã mantissa thành 3 bit cao $x_H$ và 3 bit thấp $x_L = \\text{addr}$, sau đó áp dụng bảng bù độ cong tối ưu hóa rời rạc toàn cục:
+   $$\\text{log\\_frac} = \\{x_H, \\text{LUT}_{\\text{low3}}[x_L]\\}$$
+   Bảng $\\text{LUT}_{\\text{low3}} = \\{1, 3, 4, 4, 6, 6, 7, 7\\}$ vừa khớp đường cong logarit, vừa cộng gộp sẵn địa chỉ `addr` để **loại bỏ 100% bộ cộng phần cứng**.
 3. **Giải mã Antilogarit dạng Cây MUX phẳng:**
-   $$|P| \approx \frac{(2^F + \text{fraction}) \ll E}{2^F} \quad (F = 6)$$
+   $$|P| \\approx \\frac{(2^F + \\text{fraction}) \\ll E}{2^F} \\quad (F = 6)$$
    Được tổng hợp thành cây MUX phẳng 16 nhánh, triệt tiêu hoàn toàn trễ của bộ dịch động (Barrel Shifter).
 4. **Nấu chảy phép làm tròn và đổi dấu bù 2 (Fused Rounding & Two's Complement):**
-   Thay vì dùng 2 bộ cộng độc lập (một bộ cộng làm tròn $+ \text{round\_bit}$, một bộ đổi dấu $+ 1$), thiết kế nấu chảy cả hai thành một tầng cộng duy nhất qua chân `carry_in`, tiết kiệm ngay lập tức **16 LUTs** và **1.2 ns** trễ.
+   Thay vì dùng 2 bộ cộng độc lập (một bộ cộng làm tròn $+ \\text{round\\_bit}$, một bộ đổi dấu $+ 1$), thiết kế nấu chảy cả hai thành một tầng cộng duy nhất qua chân `carry_in`, tiết kiệm ngay lập tức **16 LUTs** và **1.2 ns** trễ.
 
 ## 1.4. Điểm Cải tiến và Ưu điểm Vượt trội so với Baseline
-1. **Tài nguyên siêu tinh gọn:** Giảm từ **150 Slice LUTs xuống chỉ còn 73 - 76 LUTs** (tiết kiệm $> 51\%$ phần cứng).
+1. **Tài nguyên siêu tinh gọn:** Giảm từ **150 Slice LUTs xuống chỉ còn 73 - 76 LUTs** (tiết kiệm $> 51\\%$ phần cứng).
 2. **Tuyệt đối không dùng DSP:** Đạt chuẩn cấm DSP (`-max_dsp 0`), giải phóng tài nguyên DSP cho các tác vụ xử lý khác trong SoC.
 3. **Tốc độ xung nhịp cao hơn:** Giảm độ trễ từ **9.814 ns xuống 8.476 - 8.878 ns**, nâng Fmax từ **101.9 MHz lên 112.6 - 118.0 MHz** (+10.5% đến +15.8% tốc độ).
 4. **Tiết kiệm công suất đột phá:** Giảm **50% công suất động trên FPGA** (2.0 mW vs 4.0 mW) và giảm tới **59.5% tổng công suất trên ASIC Nangate 45nm** (72 µW vs 178 µW).
@@ -106,7 +117,7 @@ Kiến trúc đề xuất bao gồm 5 khối chức năng được tối ưu hó
 | **Công cụ EDA** | **AMD Vivado 2024.2** | **Yosys 0.33 + OpenSTA 3.1.0** |
 | **Dòng chip / Thư viện mục tiêu** | Xilinx Zynq-7000 (`xc7z010clg400-1`) | Nangate Open Cell Library 45nm (`typical 1.1V, 25°C`) |
 | **Quy trình tổng hợp** | Full Implementation: Synthesis -> Opt -> Place -> Route | RTL Synthesis (Yosys) -> Standard Cell Mapping (ABC) -> STA/Power (OpenSTA) |
-| **Điều kiện Timing / Clock** | $T_{\text{clk}} = 10.0\text{ ns}$ ($F_{\text{clk}} = 100\text{ MHz}$) | $T_{\text{clk}} = 10.0\text{ ns}$ ($F_{\text{clk}} = 100\text{ MHz}$) |
+| **Điều kiện Timing / Clock** | $T_{\\text{clk}} = 10.0\\text{ ns}$ ($F_{\\text{clk}} = 100\\text{ MHz}$) | $T_{\\text{clk}} = 10.0\\text{ ns}$ ($F_{\\text{clk}} = 100\\text{ MHz}$) |
 | **Ràng buộc DSP** | Cấm dùng khối nhân cứng DSP (`-max_dsp 0`) | Không sử dụng Macro nhân |
 | **Ràng buộc IO** | Đặt thanh ghi đồng bộ đầu vào/đầu ra (Registered IO) | In-out timing constraints |
 
@@ -114,35 +125,35 @@ Kiến trúc đề xuất bao gồm 5 khối chức năng được tối ưu hó
 
 ## 2.2. Kết quả Kiểm tra Chức năng của Mạch Nhân 8-bit (Functional Verification)
 
-Kiểm thử tự động hóa bằng phương pháp **Vét cạn Toàn bộ 100% không gian dữ liệu (Exhaustive Simulation)** gồm tất cả **65,536 trường hợp** ($A, B \in [-128, 127]$):
+Kiểm thử tự động hóa bằng phương pháp **Vét cạn Toàn bộ 100% không gian dữ liệu (Exhaustive Simulation)** gồm tất cả **65,536 trường hợp** ($A, B \\in [-128, 127]$):
 
 ### A. Bảng Chỉ số Đánh giá Sai số Toán học Toàn cục (Theo yêu cầu Track 2)
 
 | Chỉ số kiểm thử chức năng | Ký hiệu / Định nghĩa | Kết quả thực nghiệm (V6) | Tiêu chuẩn Cuộc thi | Đánh giá |
 | :--- | :---: | :---: | :---: | :---: |
-| **Tổng số trường hợp kiểm tra** | $N = 256 \times 256$ | **65,536 / 65,536** | $100\%$ không gian | **Đạt 100% độ phủ** |
-| **Tỉ lệ lỗi (Error Rate)** | $\text{ER} = \frac{\text{Số ca } AE \ne 0}{N}$ | **97.64%** (1,547 ca đúng 100%) | Khuyến khích đo | Đặc trưng mạch xấp xỉ |
-| **Sai số tương đối trung bình** | $\text{MRED} = \frac{1}{N} \sum \frac{\|P_{\text{approx}} - P_{\text{exact}}\|}{\|P_{\text{exact}}\|}$ | **3.0494%** | **$< 3.20\%$** | **XUẤT SẮC (Dưới ngưỡng trần)** |
-| **Khoảng cách sai số trung bình** | $\text{MED} = \frac{1}{N} \sum \|P_{\text{approx}} - P_{\text{exact}}\|$ | **105.69 LSB** | Tối ưu hóa | Rất thấp trên thang 16-bit |
-| **Sai số tuyệt đối lớn nhất** | $\text{WCE} = \max \|P_{\text{approx}} - P_{\text{exact}}\|$ | **961 LSB** | Giám sát | Tại cặp $(-95, -95)$ |
-| **Bảo toàn phép nhân với số 0** | $A=0$ hoặc $B=0$ | **511 / 511 (100%)** | $100\%$ | **Chính xác tuyệt đối** |
+| **Tổng số trường hợp kiểm tra** | $N = 256 \\times 256$ | **65,536 / 65,536** | $100\\%$ không gian | **Đạt 100% độ phủ** |
+| **Tỉ lệ lỗi (Error Rate)** | $\\text{ER} = \\frac{\\text{Số ca } AE \\ne 0}{N}$ | **97.64%** (1,547 ca đúng 100%) | Khuyến khích đo | Đặc trưng mạch xấp xỉ |
+| **Sai số tương đối trung bình** | $\\text{MRED} = \\frac{1}{N} \\sum \\frac{\\|P_{\\text{approx}} - P_{\\text{exact}}\\|}{\\|P_{\\text{exact}}\\|}$ | **3.0494%** | **$< 3.20\\%$** | **XUẤT SẮC (Dưới ngưỡng trần)** |
+| **Khoảng cách sai số trung bình** | $\\text{MED} = \\frac{1}{N} \\sum \\|P_{\\text{approx}} - P_{\\text{exact}}\\|$ | **105.69 LSB** | Tối ưu hóa | Rất thấp trên thang 16-bit |
+| **Sai số tuyệt đối lớn nhất** | $\\text{WCE} = \\max \\|P_{\\text{approx}} - P_{\\text{exact}}\\|$ | **961 LSB** | Giám sát | Tại cặp $(-95, -95)$ |
+| **Bảo toàn phép nhân với số 0** | $A=0$ hoặc $B=0$ | **511 / 511 (100%)** | $100\\%$ | **Chính xác tuyệt đối** |
 
 ### B. Bảng Thống kê Phân loại theo Nhóm Dấu & Góc Phần Tư
 Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền phần tư:
 
 | Nhóm kiểm thử chức năng | Dải giá trị $(A, B)$ | Số lượng mẫu | Chính xác 100% | MRED (%) | WCE (LSB) | Đánh giá chức năng |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Trường hợp chứa số 0** | $A=0$ hoặc $B=0$ | **511** | **511** ($100\%$) | **0.00%** | **0** | Khối Zero Bypass chuẩn 100% |
-| **Góc 1: Dương $\times$ Dương** | $A > 0, B > 0$ | **16,129** | 258 | **3.05%** | 961 | Tích dương đúng 100% về dấu |
-| **Góc 2: Dương $\times$ Âm** | $A > 0, B < 0$ | **16,256** | 259 | **3.05%** | 961 | Tích âm đúng 100% về dấu |
-| **Góc 3: Âm $\times$ Dương** | $A < 0, B > 0$ | **16,256** | 259 | **3.05%** | 961 | Đối xứng hoàn hảo với Góc 2 |
-| **Góc 4: Âm $\times$ Âm** | $A < 0, B < 0$ | **16,384** | 260 | **3.05%** | 961 | Khôi phục dấu bù 2 chính xác |
-| **Lũy thừa 2** | $A, B \in \{\pm 1, \dots, \pm 64\}$ | **196** | 96 | - | 128 | Sai lệch chỉ ở bước làm tròn LSB |
+| **Trường hợp chứa số 0** | $A=0$ hoặc $B=0$ | **511** | **511** ($100\\%$) | **0.00%** | **0** | Khối Zero Bypass chuẩn 100% |
+| **Góc 1: Dương $\\times$ Dương** | $A > 0, B > 0$ | **16,129** | 258 | **3.05%** | 961 | Tích dương đúng 100% về dấu |
+| **Góc 2: Dương $\\times$ Âm** | $A > 0, B < 0$ | **16,256** | 259 | **3.05%** | 961 | Tích âm đúng 100% về dấu |
+| **Góc 3: Âm $\\times$ Dương** | $A < 0, B > 0$ | **16,256** | 259 | **3.05%** | 961 | Đối xứng hoàn hảo với Góc 2 |
+| **Góc 4: Âm $\\times$ Âm** | $A < 0, B < 0$ | **16,384** | 260 | **3.05%** | 961 | Khôi phục dấu bù 2 chính xác |
+| **Lũy thừa 2** | $A, B \\in \\{\\pm 1, \\dots, \\pm 64\\}$ | **196** | 96 | - | 128 | Sai lệch chỉ ở bước làm tròn LSB |
 | **TỔNG HỢP TOÀN BỘ** | **$[-128, 127]$** | **65,536** | **1,547** | **3.05%** | **961** | **Hoạt động tin cậy và hoàn toàn ổn định** |
 
 ### C. Bảng Minh chứng các Test Vectors Tiêu biểu (Corner Cases)
 
-| STT | Kịch bản kiểm thử (Corner Case) | Toán hạng A | Toán hạng B | Tích lý thuyết ($P_{\text{exact}}$) | Tích mạch tính ($P_{\text{approx}}$) | Lệch tuyệt đối ($AE$) | Sai số tương đối ($RE$) | Trạng thái |
+| STT | Kịch bản kiểm thử (Corner Case) | Toán hạng A | Toán hạng B | Tích lý thuyết ($P_{\\text{exact}}$) | Tích mạch tính ($P_{\\text{approx}}$) | Lệch tuyệt đối ($AE$) | Sai số tương đối ($RE$) | Trạng thái |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **1** | **Biên số 0 (Zero detect)** | `0` | `50` | `0` | `0` | `0` | **0.00%** | Pass (Chuẩn) |
 | **2** | **Biên số 0 cực đại** | `127` | `0` | `0` | `0` | `0` | **0.00%** | Pass (Chuẩn) |
@@ -154,8 +165,8 @@ Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền ph
 | **8** | **Lũy thừa 2 chuẩn (Lớn)** | `32` | `32` | `1,024` | `1,056` | `32` | **3.12%** | Trong ngưỡng an toàn |
 | **9** | **Cực đại dương (Max Positive)** | `127` | `127` | `16,129` | `16,128` | `1` | **0.01%** | Siêu chính xác |
 | **10**| **Cực tiểu bù 2 (Min Negative)** | `-128` | `-128` | `16,384` | `16,896` | `512` | **3.12%** | Trong ngưỡng an toàn |
-| **11**| **Biên chéo Max $\times$ Min** | `-128` | `127` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
-| **12**| **Biên chéo Min $\times$ Max** | `127` | `-128` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
+| **11**| **Biên chéo Max $\\times$ Min** | `-128` | `127` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
+| **12**| **Biên chéo Min $\\times$ Max** | `127` | `-128` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
 | **13**| **Số ngẫu nhiên thông thường 1** | `19` | `23` | `437` | `432` | `5` | **1.14%** | Rất tốt |
 | **14**| **Số ngẫu nhiên thông thường 2** | `63` | `63` | `3,969` | `4,032` | `63` | **1.59%** | Rất tốt |
 | **15**| **Số ngẫu nhiên có dấu** | `-64` | `63` | `-4,032` | `-4,096` | `64` | **1.59%** | Rất tốt |
@@ -179,7 +190,7 @@ Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền ph
 ---
 
 ## 2.4. Báo cáo Công suất Tiêu thụ (Power Consumption)
-Đo lường tại tần số $100\text{ MHz}$ với điện áp tiêu chuẩn:
+Đo lường tại tần số $100\\text{ MHz}$ với điện áp tiêu chuẩn:
 
 | Chỉ số công suất tiêu thụ | Baseline (Ban tổ chức) | LUT-ALM V6 (Đề xuất) | Mức độ tối ưu hóa |
 | :--- | :---: | :---: | :---: |
@@ -200,8 +211,8 @@ Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền ph
 | :--- | :---: | :---: | :---: | :--- |
 | **Độ trễ Data Path (Critical Path Delay)**| **9.814 ns** | **8.476 ns** | **8.878 ns** | **Nhanh hơn 10.5% - 15.8%** |
 | **Timing Slack (Target 10.0 ns)** | +0.186 ns | **+1.524 ns** | **+1.122 ns** | Biên độ an toàn cao gấp 8 lần |
-| **Tần số hoạt động tối đa ($F_{\max}$)** | **101.90 MHz** | **117.98 MHz** | **112.64 MHz** | **Vượt xa mốc 100 MHz chuẩn** |
-| **ASIC Cell Delay (STA OpenSTA)** | 1.150 ns | 1.420 ns | 1.420 ns | Đạt $F_{\max} = 704\text{ MHz}$ trên 45nm |
+| **Tần số hoạt động tối đa ($F_{\\max}$)** | **101.90 MHz** | **117.98 MHz** | **112.64 MHz** | **Vượt xa mốc 100 MHz chuẩn** |
+| **ASIC Cell Delay (STA OpenSTA)** | 1.150 ns | 1.420 ns | 1.420 ns | Đạt $F_{\\max} = 704\\text{ MHz}$ trên 45nm |
 
 ---
 
@@ -226,8 +237,8 @@ Thiết kế mạch nhân xấp xỉ 8-bit **LUT-ALM** hoàn toàn đáp ứng x
 1. **Hiệu quả sử dụng tài nguyên vô địch (-51.3% LUTs):** Cắt giảm từ 150 LUTs xuống còn **73 - 76 LUTs**, giải phóng hơn nửa diện tích logic cho các khối PE khác trong bộ gia tốc AI.
 2. **Tiết kiệm năng lượng vượt bậc (-50% đến -59.5% Power):** Cắt giảm một nửa công suất trên FPGA (2.0 mW) và giảm gần 60% trên ASIC 45nm (72 µW), mang lại lợi thế quyết định cho các thiết bị Edge AI chạy pin.
 3. **Cải thiện tốc độ (+10.5% đến +15.8% Fmax):** Đường tới hạn chỉ 8.476 ns, vận hành ổn định trên 112 MHz mà không có bất kỳ vi phạm Timing Slack nào.
-4. **Kiểm soát sai số khoa học (MRED = 3.0494%):** Nằm an toàn dưới ngưỡng yêu cầu $3.2\%$, bảo đảm 100% tính toàn vẹn của bit dấu và bảo toàn phép nhân với số 0 tuyệt đối.
-5. **Cơ sở hạ tầng thực nghiệm chuẩn công nghiệp:** Toàn bộ mã nguồn RTL, bộ testbench vét cạn 65,536 trường hợp, script tổng hợp tự động `make all`, bitstream nạp chip Zybo Z7-10 đều đã sẵn sàng và được đóng gói hoàn chỉnh.
+4. **Kiểm soát sai số khoa học (MRED = 3.0494%):** Nằm an toàn dưới ngưỡng yêu cầu $3.2\\%$, bảo đảm 100% tính toàn vẹn của bit dấu và bảo toàn phép nhân với số 0 tuyệt đối.
+5. **Cơ sở hạ tầng thực nghiệm chuẩn công nghiệp:** Toàn bộ mã nguồn RTL, bộ testbench vét cạn 65,536 trường hợp, script tổng hợp tự động `make all`, bitstream nạp board Zybo Z7-10 đều đã sẵn sàng và được đóng gói hoàn chỉnh.
 
 ---
 *Báo cáo được biên soạn và kiểm chứng thực nghiệm tự động bởi Sinh viên Nguyễn Văn Thức (MSSV: 24161421).*
@@ -236,7 +247,7 @@ Thiết kế mạch nhân xấp xỉ 8-bit **LUT-ALM** hoàn toàn đáp ứng x
     print(f"[OK] Generated Markdown Competition Report: {md_path}")
 
     # -------------------------------------------------------------
-    # 2. GENERATE WORD (.DOCX) REPORT
+    # 2. GENERATE VALIDATED WORD (.DOCX) REPORT
     # -------------------------------------------------------------
     xml_parts = []
     
@@ -269,7 +280,7 @@ Thiết kế mạch nhân xấp xỉ 8-bit **LUT-ALM** hoàn toàn đáp ứng x
         xml_parts.append(f"""
         <w:p>
             <w:r><w:rPr><w:b/><w:sz w:val="{size}"/><w:color w:val="1F497D"/></w:rPr>
-            <w:t>{title}</w:t></w:r>
+            <w:t>{xml_escape(title)}</w:t></w:r>
         </w:p>
         """)
 
@@ -280,18 +291,18 @@ Thiết kế mạch nhân xấp xỉ 8-bit **LUT-ALM** hoàn toàn đáp ứng x
         xml_parts.append(f"""
         <w:p>
             <w:r><w:rPr>{style}<w:sz w:val="21"/></w:rPr>
-            <w:t>{text}</w:t></w:r>
+            <w:t>{xml_escape(text)}</w:t></w:r>
         </w:p>
         """)
 
     def add_table(headers, rows):
         rows_xml = []
         # Header
-        h_cells = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val=\"19\"/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{h}</w:t></w:r></w:p></w:tc>" for h in headers])
+        h_cells = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val=\"19\"/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{xml_escape(h)}</w:t></w:r></w:p></w:tc>" for h in headers])
         rows_xml.append(f"<w:tr>{h_cells}</w:tr>")
         # Data
         for row in rows:
-            r_cells = "".join([f"<w:tc><w:p><w:r><w:rPr><w:sz w:val=\"18\"/></w:rPr><w:t>{c}</w:t></w:r></w:p></w:tc>" for c in row])
+            r_cells = "".join([f"<w:tc><w:p><w:r><w:rPr><w:sz w:val=\"18\"/></w:rPr><w:t>{xml_escape(c)}</w:t></w:r></w:p></w:tc>" for c in row])
             rows_xml.append(f"<w:tr>{r_cells}</w:tr>")
         xml_parts.append(f"""
         <w:tbl>
@@ -369,36 +380,42 @@ Thiết kế mạch nhân xấp xỉ 8-bit **LUT-ALM** hoàn toàn đáp ứng x
     add_paragraph("5. Sẵn sàng triển khai: Bộ nhớ bitstream nạp board Zybo Z7-10 đã được đóng gói và kiểm chứng.", bold=True)
 
     content_xml = "\n".join(xml_parts)
+    
+    # Official OpenXML Content_Types schema
     content_types = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-<Default Extension="xml" ContentType="application/xml"/>
-<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+    <Default Extension="xml" ContentType="application/xml"/>
+    <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
 </Types>"""
 
     rels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>"""
-
-    doc_rels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>"""
 
     doc_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:body>
+    <w:body>
 {content_xml}
-</w:body>
+    </w:body>
 </w:document>"""
+
+    # Validate XML before writing
+    try:
+        ET.fromstring(content_types)
+        ET.fromstring(rels)
+        ET.fromstring(doc_xml)
+    except Exception as e:
+        print(f"FATAL: Generated XML validation failed: {e}")
+        sys.exit(1)
 
     with zipfile.ZipFile(docx_path, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("[Content_Types].xml", content_types)
         z.writestr("_rels/.rels", rels)
-        z.writestr("word/_rels/document.xml.rels", doc_rels)
         z.writestr("word/document.xml", doc_xml)
 
-    print(f"[OK] Generated Word Competition Report: {docx_path}")
+    print(f"[OK] Generated Validated Word Competition Report: {docx_path}")
 
 if __name__ == "__main__":
     build_competition_reports()

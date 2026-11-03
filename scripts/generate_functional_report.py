@@ -11,10 +11,21 @@ import os
 import sys
 import argparse
 import zipfile
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # Hardware LUT definitions
 LUT_LOW3 = [1, 3, 4, 4, 6, 6, 7, 7]
+
+def xml_escape(text):
+    if text is None:
+        return ""
+    return (str(text)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&apos;"))
 
 def encode_operand(x):
     if x < 0:
@@ -257,7 +268,7 @@ def export_csv_summary(data, out_path):
 def export_docx_report(data, out_path):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     
-    # Generate WordprocessingML content
+    # Generate WordprocessingML content with strict XML escaping
     xml_parts = []
     
     # Title
@@ -274,7 +285,7 @@ def export_docx_report(data, out_path):
     <w:p>
         <w:pPr><w:jc w:val="center"/></w:pPr>
         <w:r><w:rPr><w:i/><w:sz w:val="22"/><w:color w:val="595959"/></w:rPr>
-        <w:t>Đánh giá vét cạn 65,536 trường hợp Signed INT8 - Kiến trúc {data['arch'].upper()}</w:t></w:r>
+        <w:t>Đánh giá vét cạn 65,536 trường hợp Signed INT8 - Kiến trúc {xml_escape(data['arch'].upper())}</w:t></w:r>
     </w:p>
     <w:p><w:r><w:t></w:t></w:r></w:p>
     """)
@@ -290,7 +301,7 @@ def export_docx_report(data, out_path):
     # Table 1: Global metrics
     rows_xml = []
     headers = ["Chỉ số kiểm tra chức năng", "Giá trị thực nghiệm", "Yêu cầu BTC", "Kết luận"]
-    row_h = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{h}</w:t></w:r></w:p></w:tc>" for h in headers])
+    row_h = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{xml_escape(h)}</w:t></w:r></w:p></w:tc>" for h in headers])
     rows_xml.append(f"<w:tr>{row_h}</w:tr>")
     
     table1_data = [
@@ -301,7 +312,7 @@ def export_docx_report(data, out_path):
         ("Số ca nhân với số 0 chính xác", "511 / 511 (100%)", "100%", "Chính xác tuyệt đối (Bypass 0)")
     ]
     for row in table1_data:
-        cells = "".join([f"<w:tc><w:p><w:r><w:t>{c}</w:t></w:r></w:p></w:tc>" for c in row])
+        cells = "".join([f"<w:tc><w:p><w:r><w:t>{xml_escape(c)}</w:t></w:r></w:p></w:tc>" for c in row])
         rows_xml.append(f"<w:tr>{cells}</w:tr>")
         
     xml_parts.append(f"""
@@ -333,13 +344,13 @@ def export_docx_report(data, out_path):
     # Table 2: Category
     rows_xml2 = []
     headers2 = ["Nhóm trường hợp kiểm thử", "Số lượng mẫu", "Chính xác 100%", "MRED (%)", "WCE (LSB)"]
-    row_h2 = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{h}</w:t></w:r></w:p></w:tc>" for h in headers2])
+    row_h2 = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{xml_escape(h)}</w:t></w:r></w:p></w:tc>" for h in headers2])
     rows_xml2.append(f"<w:tr>{row_h2}</w:tr>")
     
     for k, v in data["categories"].items():
         mred_str = f"{v['re_sum'] / v['count_nz'] * 100.0:.2f}%" if v['count_nz'] > 0 else "0.00%"
         row = [v['name'], f"{v['total']:,}", f"{v['correct']:,}", mred_str, str(v['max_ae'])]
-        cells = "".join([f"<w:tc><w:p><w:r><w:t>{c}</w:t></w:r></w:p></w:tc>" for c in row])
+        cells = "".join([f"<w:tc><w:p><w:r><w:t>{xml_escape(c)}</w:t></w:r></w:p></w:tc>" for c in row])
         rows_xml2.append(f"<w:tr>{cells}</w:tr>")
         
     xml_parts.append(f"""
@@ -371,12 +382,12 @@ def export_docx_report(data, out_path):
     # Table 3: Corner cases
     rows_xml3 = []
     headers3 = ["STT", "Kịch bản kiểm thử", "A", "B", "Tích lý thuyết", "Tích mạch tính", "Lệch (AE)", "Sai số (RE)"]
-    row_h3 = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{h}</w:t></w:r></w:p></w:tc>" for h in headers3])
+    row_h3 = "".join([f"<w:tc><w:tcPr><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"1F497D\"/></w:tcPr><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val=\"FFFFFF\"/></w:rPr><w:t>{xml_escape(h)}</w:t></w:r></w:p></w:tc>" for h in headers3])
     rows_xml3.append(f"<w:tr>{row_h3}</w:tr>")
     
     for idx, item in enumerate(data["key_results"], 1):
         row = [str(idx), item["desc"], str(item["a"]), str(item["b"]), f"{item['exact']:,}", f"{item['approx']:,}", str(item["ae"]), f"{item['re']:.2f}%"]
-        cells = "".join([f"<w:tc><w:p><w:r><w:t>{c}</w:t></w:r></w:p></w:tc>" for c in row])
+        cells = "".join([f"<w:tc><w:p><w:r><w:t>{xml_escape(c)}</w:t></w:r></w:p></w:tc>" for c in row])
         rows_xml3.append(f"<w:tr>{cells}</w:tr>")
 
     xml_parts.append(f"""
@@ -400,32 +411,32 @@ def export_docx_report(data, out_path):
     # Assemble docx zip
     content_xml = "\n".join(xml_parts)
     content_types = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-<Default Extension="xml" ContentType="application/xml"/>
-<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+    <Default Extension="xml" ContentType="application/xml"/>
+    <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
 </Types>"""
 
     rels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>"""
-
-    doc_rels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>"""
 
     doc_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:body>
+    <w:body>
 {content_xml}
-</w:body>
+    </w:body>
 </w:document>"""
+
+    # Validate XML before writing
+    ET.fromstring(content_types)
+    ET.fromstring(rels)
+    ET.fromstring(doc_xml)
 
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("[Content_Types].xml", content_types)
         z.writestr("_rels/.rels", rels)
-        z.writestr("word/_rels/document.xml.rels", doc_rels)
         z.writestr("word/document.xml", doc_xml)
 
 def main():
