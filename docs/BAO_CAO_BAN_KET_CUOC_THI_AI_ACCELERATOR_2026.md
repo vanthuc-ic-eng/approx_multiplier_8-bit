@@ -19,7 +19,7 @@
 Trong các bộ gia tốc AI phần cứng (NPU/Systolic Array cho CNN/Transformer), các phép nhân số nguyên có dấu 8-bit (Signed INT8) chiếm tới hơn **80% diện tích silicon và công suất tiêu thụ**.
 - **Kiến trúc thông thường (Baseline của Ban tổ chức):** Sử dụng mạng cộng ma trận tích từng phần tuyến tính (Array Multiplier / Baugh-Wooley). Mạch này yêu cầu tới **150 Slice LUTs** trên FPGA Xilinx 7-Series, độ trễ 10 tầng logic (9.814 ns) và tiêu hao 4.0 mW công suất động.
 - **Ý tưởng đột phá đề xuất:** Chuyển phép nhân từ miền tuyến tính sang **miền Logarithm (Logarithmic Number System - LNS)**:
-  $$|P| = |A| 	imes |B| \iff \log_2(|P|) = \log_2(|A|) + \log_2(|B|)$$
+  $$|P| = |A| \times |B| \iff \log_2(|P|) = \log_2(|A|) + \log_2(|B|)$$
   Biến phép nhân phức tạp thành **phép cộng 1 tầng**, giúp cắt giảm hơn **51% số lượng LUTs** và giảm **gần 60% công suất** trên cả FPGA lẫn ASIC.
 
 ## 1.2. Kiến trúc và Sơ đồ Khối (Block Diagram)
@@ -49,16 +49,16 @@ Kiến trúc đề xuất bao gồm 5 khối chức năng được tối ưu hó
 1. **Chuẩn hóa nhị phân (Binary Normalization):**
    Mọi toán hạng $|N| \in [1, 128]$ được phân rã dạng:
    $$|N| = 2^k \cdot (1 + x)$$
-   với $k = \lfloor \log_2 |N| floor$ (vị trí bit 1 cao nhất) và $x \in [0, 1)$ là mantissa.
+   với $k = \lfloor \log_2 |N| \rfloor$ (vị trí bit 1 cao nhất) và $x \in [0, 1)$ là mantissa.
 2. **Khắc phục triệt để sai số của Mitchell bằng Vi hiệu chỉnh Micro-LUT:**
-   Thuật toán cổ điển Mitchell (1962) đặt $\log_2(1+x) pprox x$ gây sai số tương đối cực đại lên tới $11.1\%$ (vượt xa trần cho phép $3.2\%$). Thiết kế đề xuất phân rã mantissa thành 3 bit cao $x_H$ và 3 bit thấp $x_L = 	ext{addr}$, sau đó áp dụng bảng bù độ cong tối ưu hóa rời rạc toàn cục:
-   $$	ext{log\_frac} = \{x_H, 	ext{LUT}_{	ext{low3}}[x_L]\}$$
-   Bảng $	ext{LUT}_{	ext{low3}} = \{1, 3, 4, 4, 6, 6, 7, 7\}$ vừa khớp đường cong logarit, vừa cộng gộp sẵn địa chỉ `addr` để **loại bỏ 100% bộ cộng phần cứng**.
+   Thuật toán cổ điển Mitchell (1962) đặt $\log_2(1+x) \approx x$ gây sai số tương đối cực đại lên tới $11.1\%$ (vượt xa trần cho phép $3.2\%$). Thiết kế đề xuất phân rã mantissa thành 3 bit cao $x_H$ và 3 bit thấp $x_L = \text{addr}$, sau đó áp dụng bảng bù độ cong tối ưu hóa rời rạc toàn cục:
+   $$\text{log\_frac} = \{x_H, \text{LUT}_{\text{low3}}[x_L]\}$$
+   Bảng $\text{LUT}_{\text{low3}} = \{1, 3, 4, 4, 6, 6, 7, 7\}$ vừa khớp đường cong logarit, vừa cộng gộp sẵn địa chỉ `addr` để **loại bỏ 100% bộ cộng phần cứng**.
 3. **Giải mã Antilogarit dạng Cây MUX phẳng:**
-   $$|P| pprox rac{(2^F + 	ext{fraction}) \ll E}{2^F} \quad (F = 6)$$
+   $$|P| \approx \frac{(2^F + \text{fraction}) \ll E}{2^F} \quad (F = 6)$$
    Được tổng hợp thành cây MUX phẳng 16 nhánh, triệt tiêu hoàn toàn trễ của bộ dịch động (Barrel Shifter).
 4. **Nấu chảy phép làm tròn và đổi dấu bù 2 (Fused Rounding & Two's Complement):**
-   Thay vì dùng 2 bộ cộng độc lập (một bộ cộng làm tròn $+ 	ext{round\_bit}$, một bộ đổi dấu $+ 1$), thiết kế nấu chảy cả hai thành một tầng cộng duy nhất qua chân `carry_in`, tiết kiệm ngay lập tức **16 LUTs** và **1.2 ns** trễ.
+   Thay vì dùng 2 bộ cộng độc lập (một bộ cộng làm tròn $+ \text{round\_bit}$, một bộ đổi dấu $+ 1$), thiết kế nấu chảy cả hai thành một tầng cộng duy nhất qua chân `carry_in`, tiết kiệm ngay lập tức **16 LUTs** và **1.2 ns** trễ.
 
 ## 1.4. Điểm Cải tiến và Ưu điểm Vượt trội so với Baseline
 1. **Tài nguyên siêu tinh gọn:** Giảm từ **150 Slice LUTs xuống chỉ còn 73 - 76 LUTs** (tiết kiệm $> 51\%$ phần cứng).
@@ -78,7 +78,7 @@ Kiến trúc đề xuất bao gồm 5 khối chức năng được tối ưu hó
 | **Công cụ EDA** | **AMD Vivado 2024.2** | **Yosys 0.33 + OpenSTA 3.1.0** |
 | **Dòng chip / Thư viện mục tiêu** | Xilinx Zynq-7000 (`xc7z010clg400-1`) | Nangate Open Cell Library 45nm (`typical 1.1V, 25°C`) |
 | **Quy trình tổng hợp** | Full Implementation: Synthesis -> Opt -> Place -> Route | RTL Synthesis (Yosys) -> Standard Cell Mapping (ABC) -> STA/Power (OpenSTA) |
-| **Điều kiện Timing / Clock** | $T_{	ext{clk}} = 10.0	ext{ ns}$ ($F_{	ext{clk}} = 100	ext{ MHz}$) | $T_{	ext{clk}} = 10.0	ext{ ns}$ ($F_{	ext{clk}} = 100	ext{ MHz}$) |
+| **Điều kiện Timing / Clock** | $T_{\text{clk}} = 10.0\text{ ns}$ ($F_{\text{clk}} = 100\text{ MHz}$) | $T_{\text{clk}} = 10.0\text{ ns}$ ($F_{\text{clk}} = 100\text{ MHz}$) |
 | **Ràng buộc DSP** | Cấm dùng khối nhân cứng DSP (`-max_dsp 0`) | Không sử dụng Macro nhân |
 | **Ràng buộc IO** | Đặt thanh ghi đồng bộ đầu vào/đầu ra (Registered IO) | In-out timing constraints |
 
@@ -92,12 +92,11 @@ Kiểm thử tự động hóa bằng phương pháp **Vét cạn Toàn bộ 100
 
 | Chỉ số kiểm thử chức năng | Ký hiệu / Định nghĩa | Kết quả thực nghiệm (V6) | Tiêu chuẩn Cuộc thi | Đánh giá |
 | :--- | :---: | :---: | :---: | :---: |
-| **Tổng số trường hợp kiểm tra** | $N = 256 	imes 256$ | **65,536 / 65,536** | $100\%$ không gian | **Đạt 100% độ phủ** |
-| **Tỉ lệ lỗi (Error Rate)** | $	ext{ER} = rac{	ext{Số ca } AE 
-e 0}{N}$ | **97.64%** (1,547 ca đúng 100%) | Khuyến khích đo | Đặc trưng mạch xấp xỉ |
-| **Sai số tương đối trung bình** | $	ext{MRED} = rac{1}{N} \sum rac{\|P_{	ext{approx}} - P_{	ext{exact}}\|}{\|P_{	ext{exact}}\|}$ | **3.0494%** | **$< 3.20\%$** | **XUẤT SẮC (Dưới ngưỡng trần)** |
-| **Khoảng cách sai số trung bình** | $	ext{MED} = rac{1}{N} \sum \|P_{	ext{approx}} - P_{	ext{exact}}\|$ | **105.69 LSB** | Tối ưu hóa | Rất thấp trên thang 16-bit |
-| **Sai số tuyệt đối lớn nhất** | $	ext{WCE} = \max \|P_{	ext{approx}} - P_{	ext{exact}}\|$ | **961 LSB** | Giám sát | Tại cặp $(-95, -95)$ |
+| **Tổng số trường hợp kiểm tra** | $N = 256 \times 256$ | **65,536 / 65,536** | $100\%$ không gian | **Đạt 100% độ phủ** |
+| **Tỉ lệ lỗi (Error Rate)** | $\text{ER} = \frac{\text{Số ca } AE \ne 0}{N}$ | **97.64%** (1,547 ca đúng 100%) | Khuyến khích đo | Đặc trưng mạch xấp xỉ |
+| **Sai số tương đối trung bình** | $\text{MRED} = \frac{1}{N} \sum \frac{\|P_{\text{approx}} - P_{\text{exact}}\|}{\|P_{\text{exact}}\|}$ | **3.0494%** | **$< 3.20\%$** | **XUẤT SẮC (Dưới ngưỡng trần)** |
+| **Khoảng cách sai số trung bình** | $\text{MED} = \frac{1}{N} \sum \|P_{\text{approx}} - P_{\text{exact}}\|$ | **105.69 LSB** | Tối ưu hóa | Rất thấp trên thang 16-bit |
+| **Sai số tuyệt đối lớn nhất** | $\text{WCE} = \max \|P_{\text{approx}} - P_{\text{exact}}\|$ | **961 LSB** | Giám sát | Tại cặp $(-95, -95)$ |
 | **Bảo toàn phép nhân với số 0** | $A=0$ hoặc $B=0$ | **511 / 511 (100%)** | $100\%$ | **Chính xác tuyệt đối** |
 
 ### B. Bảng Thống kê Phân loại theo Nhóm Dấu & Góc Phần Tư
@@ -106,16 +105,16 @@ Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền ph
 | Nhóm kiểm thử chức năng | Dải giá trị $(A, B)$ | Số lượng mẫu | Chính xác 100% | MRED (%) | WCE (LSB) | Đánh giá chức năng |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Trường hợp chứa số 0** | $A=0$ hoặc $B=0$ | **511** | **511** ($100\%$) | **0.00%** | **0** | Khối Zero Bypass chuẩn 100% |
-| **Góc 1: Dương $	imes$ Dương** | $A > 0, B > 0$ | **16,129** | 258 | **3.05%** | 961 | Tích dương đúng 100% về dấu |
-| **Góc 2: Dương $	imes$ Âm** | $A > 0, B < 0$ | **16,256** | 259 | **3.05%** | 961 | Tích âm đúng 100% về dấu |
-| **Góc 3: Âm $	imes$ Dương** | $A < 0, B > 0$ | **16,256** | 259 | **3.05%** | 961 | Đối xứng hoàn hảo với Góc 2 |
-| **Góc 4: Âm $	imes$ Âm** | $A < 0, B < 0$ | **16,384** | 260 | **3.05%** | 961 | Khôi phục dấu bù 2 chính xác |
+| **Góc 1: Dương $\times$ Dương** | $A > 0, B > 0$ | **16,129** | 258 | **3.05%** | 961 | Tích dương đúng 100% về dấu |
+| **Góc 2: Dương $\times$ Âm** | $A > 0, B < 0$ | **16,256** | 259 | **3.05%** | 961 | Tích âm đúng 100% về dấu |
+| **Góc 3: Âm $\times$ Dương** | $A < 0, B > 0$ | **16,256** | 259 | **3.05%** | 961 | Đối xứng hoàn hảo với Góc 2 |
+| **Góc 4: Âm $\times$ Âm** | $A < 0, B < 0$ | **16,384** | 260 | **3.05%** | 961 | Khôi phục dấu bù 2 chính xác |
 | **Lũy thừa 2** | $A, B \in \{\pm 1, \dots, \pm 64\}$ | **196** | 96 | - | 128 | Sai lệch chỉ ở bước làm tròn LSB |
 | **TỔNG HỢP TOÀN BỘ** | **$[-128, 127]$** | **65,536** | **1,547** | **3.05%** | **961** | **Hoạt động tin cậy và hoàn toàn ổn định** |
 
 ### C. Bảng Minh chứng các Test Vectors Tiêu biểu (Corner Cases)
 
-| STT | Kịch bản kiểm thử (Corner Case) | Toán hạng A | Toán hạng B | Tích lý thuyết ($P_{	ext{exact}}$) | Tích mạch tính ($P_{	ext{approx}}$) | Lệch tuyệt đối ($AE$) | Sai số tương đối ($RE$) | Trạng thái |
+| STT | Kịch bản kiểm thử (Corner Case) | Toán hạng A | Toán hạng B | Tích lý thuyết ($P_{\text{exact}}$) | Tích mạch tính ($P_{\text{approx}}$) | Lệch tuyệt đối ($AE$) | Sai số tương đối ($RE$) | Trạng thái |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **1** | **Biên số 0 (Zero detect)** | `0` | `50` | `0` | `0` | `0` | **0.00%** | Pass (Chuẩn) |
 | **2** | **Biên số 0 cực đại** | `127` | `0` | `0` | `0` | `0` | **0.00%** | Pass (Chuẩn) |
@@ -127,8 +126,8 @@ Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền ph
 | **8** | **Lũy thừa 2 chuẩn (Lớn)** | `32` | `32` | `1,024` | `1,056` | `32` | **3.12%** | Trong ngưỡng an toàn |
 | **9** | **Cực đại dương (Max Positive)** | `127` | `127` | `16,129` | `16,128` | `1` | **0.01%** | Siêu chính xác |
 | **10**| **Cực tiểu bù 2 (Min Negative)** | `-128` | `-128` | `16,384` | `16,896` | `512` | **3.12%** | Trong ngưỡng an toàn |
-| **11**| **Biên chéo Max $	imes$ Min** | `-128` | `127` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
-| **12**| **Biên chéo Min $	imes$ Max** | `127` | `-128` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
+| **11**| **Biên chéo Max $\times$ Min** | `-128` | `127` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
+| **12**| **Biên chéo Min $\times$ Max** | `127` | `-128` | `-16,256` | `-16,384` | `128` | **0.79%** | Rất tốt |
 | **13**| **Số ngẫu nhiên thông thường 1** | `19` | `23` | `437` | `432` | `5` | **1.14%** | Rất tốt |
 | **14**| **Số ngẫu nhiên thông thường 2** | `63` | `63` | `3,969` | `4,032` | `63` | **1.59%** | Rất tốt |
 | **15**| **Số ngẫu nhiên có dấu** | `-64` | `63` | `-4,032` | `-4,096` | `64` | **1.59%** | Rất tốt |
@@ -152,7 +151,7 @@ Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền ph
 ---
 
 ## 2.4. Báo cáo Công suất Tiêu thụ (Power Consumption)
-Đo lường tại tần số $100	ext{ MHz}$ với điện áp tiêu chuẩn:
+Đo lường tại tần số $100\text{ MHz}$ với điện áp tiêu chuẩn:
 
 | Chỉ số công suất tiêu thụ | Baseline (Ban tổ chức) | LUT-ALM V6 (Đề xuất) | Mức độ tối ưu hóa |
 | :--- | :---: | :---: | :---: |
@@ -174,7 +173,7 @@ Chứng minh tính đối xứng hoàn hảo của mạch trên cả 4 miền ph
 | **Độ trễ Data Path (Critical Path Delay)**| **9.814 ns** | **8.476 ns** | **8.878 ns** | **Nhanh hơn 10.5% - 15.8%** |
 | **Timing Slack (Target 10.0 ns)** | +0.186 ns | **+1.524 ns** | **+1.122 ns** | Biên độ an toàn cao gấp 8 lần |
 | **Tần số hoạt động tối đa ($F_{\max}$)** | **101.90 MHz** | **117.98 MHz** | **112.64 MHz** | **Vượt xa mốc 100 MHz chuẩn** |
-| **ASIC Cell Delay (STA OpenSTA)** | 1.150 ns | 1.420 ns | 1.420 ns | Đạt $F_{\max} = 704	ext{ MHz}$ trên 45nm |
+| **ASIC Cell Delay (STA OpenSTA)** | 1.150 ns | 1.420 ns | 1.420 ns | Đạt $F_{\max} = 704\text{ MHz}$ trên 45nm |
 
 ---
 
@@ -200,7 +199,7 @@ Thiết kế mạch nhân xấp xỉ 8-bit **LUT-ALM** hoàn toàn đáp ứng x
 2. **Tiết kiệm năng lượng vượt bậc (-50% đến -59.5% Power):** Cắt giảm một nửa công suất trên FPGA (2.0 mW) và giảm gần 60% trên ASIC 45nm (72 µW), mang lại lợi thế quyết định cho các thiết bị Edge AI chạy pin.
 3. **Cải thiện tốc độ (+10.5% đến +15.8% Fmax):** Đường tới hạn chỉ 8.476 ns, vận hành ổn định trên 112 MHz mà không có bất kỳ vi phạm Timing Slack nào.
 4. **Kiểm soát sai số khoa học (MRED = 3.0494%):** Nằm an toàn dưới ngưỡng yêu cầu $3.2\%$, bảo đảm 100% tính toàn vẹn của bit dấu và bảo toàn phép nhân với số 0 tuyệt đối.
-5. **Cơ sở hạ tầng thực nghiệm chuẩn công nghiệp:** Toàn bộ mã nguồn RTL, bộ testbench vét cạn 65,536 trường hợp, script tổng hợp tự động `make all`, bitstream nạp chip Zybo Z7-10 đều đã sẵn sàng và được đóng gói hoàn chỉnh.
+5. **Cơ sở hạ tầng thực nghiệm chuẩn công nghiệp:** Toàn bộ mã nguồn RTL, bộ testbench vét cạn 65,536 trường hợp, script tổng hợp tự động `make all`, bitstream nạp board Zybo Z7-10 đều đã sẵn sàng và được đóng gói hoàn chỉnh.
 
 ---
 *Báo cáo được biên soạn và kiểm chứng thực nghiệm tự động bởi Sinh viên Nguyễn Văn Thức (MSSV: 24161421).*

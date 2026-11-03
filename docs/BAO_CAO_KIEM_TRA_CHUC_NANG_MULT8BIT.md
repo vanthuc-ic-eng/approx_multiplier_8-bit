@@ -2,7 +2,7 @@
 
 **Sinh viên thực hiện:** NGUYỄN VĂN THỨC - MSSV: 24161421  
 **Kiến trúc:** LUTALM (TRUNC_BITS=4, QUAD_CURV=0)  
-**Ngày kiểm chứng:** 03/11/2026 14:25:29  
+**Ngày kiểm chứng:** 03/11/2026 15:08:12  
 **Phương pháp kiểm thử:** Kiểm tra vét cạn 100% không gian dữ liệu Signed INT8 (65,536 trường hợp)
 
 ---
