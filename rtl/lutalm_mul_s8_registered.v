@@ -10,7 +10,7 @@
 `timescale 1ns / 1ps
 
 module lutalm_mul_s8_registered #(
-    parameter integer MODE         = 0,
+    parameter integer MODE         = 1,
     parameter integer LOW_W        = 2,
     parameter integer TRUNC_BITS   = 4,
     parameter integer ZERO_ADDER   = 1,
