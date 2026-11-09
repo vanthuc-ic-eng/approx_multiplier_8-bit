@@ -15,7 +15,7 @@
 `timescale 1ns / 1ps
 
 module lutalm_mul_s8 #(
-    parameter integer MODE         = 1, // 0: Ultra Balanced (58-61 LUTs), 1: Ultra Compact (56 LUTs), 2: Nano (36-37 LUTs)
+    parameter integer MODE         = 2, // 0: Ultra Balanced (58-61 LUTs), 1: Ultra Compact (56 LUTs), 2: Nano (36-37 LUTs)
     parameter integer LOW_W        = 2, // Backwards-compatibility
     parameter integer TRUNC_BITS   = 4,
     parameter integer ZERO_ADDER   = 1,
