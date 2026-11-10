@@ -1,0 +1,40 @@
+
+****** xsim v2024.2 (64-bit)
+  **** SW Build 5239630 on Fri Nov 08 22:34:34 MST 2024
+  **** IP Build 5239520 on Sun Nov 10 16:12:51 MST 2024
+  **** SharedData Build 5239561 on Fri Nov 08 14:39:27 MST 2024
+  **** Start of session at: Wed Nov 11 01:52:55 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source xsim.dir/sim_snapshot/xsim_script.tcl
+# xsim {sim_snapshot} -autoloadwcfg -runall
+Time resolution is 1 ps
+run -all
+================================================================================
+ 8-BIT MULTIPLIER EXHAUSTIVE SIMULATION REPORT — AMD Vivado xsim
+ DUT Architecture : lutalm_mul_s8 (MODE=2, OPERAND_ISOLATION=1)
+ Author           : NGUYEN VAN THUC (MSSV: 24161421) - Team Conquerors
+ Institution      : Ho Chi Minh City University of Technology and Education (HCMUTE)
+ Vector Scope     : Full 65,536 vectors ([-128, 127]) + Symmetric 65,025 ([-127, 127])
+================================================================================
+--------------------------------------------------------------------------------
+ 1. FULL INT8 TWO'S COMPLEMENT EVALUATION (65,536 VECTORS: [-128, 127]):
+   - Total Tested Vectors   : 65,536
+   - Exact Zero-Error Cases : 697 (1.06 %)
+   - Mean Absolute Err (MED): 1373.8835
+   - Mean Relative Err(MRED): 33.0745 %
+   - Worst-Case Error (WCE) : 16384
+--------------------------------------------------------------------------------
+ 2. SYMMETRIC INT8 NEURAL DOMAIN EVALUATION (65,025 VECTORS: [-127, 127]):
+   - Total Tested Vectors   : 65025
+   - Exact Zero-Error Cases : 695 (1.07 %)
+   - Mean Absolute Err (MED): 1320.4293
+   - Mean Relative Err(MRED): 32.5465 %
+   - Worst-Case Error (WCE) : 7937
+================================================================================
+ Verification Status         : PASSED (100% Vector Coverage Sign-off)
+================================================================================
+$finish called at time : 65546 ns : File "/workspace/projects/mult_8bit/sim/tb_mul_8bit.v" Line 169
+exit
+INFO: [Common 17-206] Exiting xsim at Wed Nov 11 01:52:57 2026...
