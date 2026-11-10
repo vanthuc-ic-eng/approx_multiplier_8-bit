@@ -2,9 +2,8 @@
 # .gitignore for 8-bit Multiplier Project (AMD Vivado & Nangate 45nm ASIC)
 # ==============================================================================
 
-# Build & Synthesis Output Directories
+# Build & Output Directories
 build/
-reports/
 bitstream/
 
 # Bitstream & Programming Files
@@ -16,17 +15,18 @@ bitstream/
 *.drc
 *.fs
 
-# EDA & Simulation Reports
-*.rpt
-reports/*
-bitstream/*.rpt
-
 # Vivado / EDA Temporary Files, Checkpoints & WebTalk Logs
+/*.log
 .Xil/
 .xil/
+xsim.dir/
 hd_visual/
+vivado/*.cache/
+vivado/*.hw/
+vivado/*.ip_user_files/
+vivado/*.runs/
+vivado/*.sim/
 *.jou
-*.log
 *.str
 *.pb
 *.dcp
