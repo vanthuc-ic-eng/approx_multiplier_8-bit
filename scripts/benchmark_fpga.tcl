@@ -18,6 +18,12 @@ if {[info exists env(DESIGN_NAME)]} {
     set design_name "baseline"
 }
 
+if {[info exists env(MODE_VAL)]} {
+    set mode_val $env(MODE_VAL)
+} else {
+    set mode_val 2
+}
+
 if {[info exists env(TRUNC_BITS)]} {
     set trunc_bits $env(TRUNC_BITS)
 } else {
@@ -61,7 +67,7 @@ if {$top_module eq "exact_mul_s8_registered"} {
     synth_design -top $top_module -part xc7z010clg400-1 -mode out_of_context -max_dsp 0
 } else {
     synth_design -top $top_module -part xc7z010clg400-1 -mode out_of_context -max_dsp 0 \
-        -generic TRUNC_BITS=$trunc_bits -generic QUAD_CURV=$quad_curv -generic USE_CARRY=$use_carry
+        -generic MODE=$mode_val -generic TRUNC_BITS=$trunc_bits -generic QUAD_CURV=$quad_curv -generic USE_CARRY=$use_carry
 }
 
 # 2. Place & Route (Physical Implementation for exact sign-off parasitics)

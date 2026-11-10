@@ -1,24 +1,20 @@
-//NGUYEN VAN THUC - 24161421
+// NGUYEN VAN THUC - 24161421
 /*
  * Module: lutalm_mul_s8_registered
  * Description: Industrial benchmark registered wrapper for lutalm_mul_s8.
  * Provides synchronous input and output registers for accurate FPGA & ASIC
  * Register-to-Register (Reg2Reg) timing analysis, setup slack calculation,
  * maximum operating frequency (Fmax), and vector-based dynamic power reporting.
- *
- * NOTE: The core arithmetic IP (lutalm_mul_s8) remains purely combinational
- * to allow direct integration into arbitrary DSP, MAC, and systolic array pipelines.
  */
 
 `timescale 1ns / 1ps
 
 module lutalm_mul_s8_registered #(
-    parameter integer LOW_W        = 3,
+    parameter integer MODE         = 2,
+    parameter integer LOW_W        = 2,
     parameter integer TRUNC_BITS   = 4,
-    parameter integer ROUND_MODE   = 1,
-    parameter integer ADAPTIVE_LUT = 0,
-    parameter integer USE_CARRY    = 1,
-    parameter integer QUAD_CURV    = 0
+    parameter integer ZERO_ADDER   = 1,
+    parameter integer ADAPTIVE_LUT = 0
 )(
     input  wire               clk,
     input  wire               rst_n,
@@ -33,12 +29,11 @@ module lutalm_mul_s8_registered #(
 
     // Combinational core IP
     lutalm_mul_s8 #(
+        .MODE              ( MODE                   ),
         .LOW_W             ( LOW_W                  ),
         .TRUNC_BITS        ( TRUNC_BITS             ),
-        .ROUND_MODE        ( ROUND_MODE             ),
-        .ADAPTIVE_LUT      ( ADAPTIVE_LUT           ),
-        .USE_CARRY         ( USE_CARRY              ),
-        .QUAD_CURV         ( QUAD_CURV              )
+        .ZERO_ADDER        ( ZERO_ADDER             ),
+        .ADAPTIVE_LUT      ( ADAPTIVE_LUT           )
     ) u_core (
         .a_i               ( a_reg                  ),
         .b_i               ( b_reg                  ),

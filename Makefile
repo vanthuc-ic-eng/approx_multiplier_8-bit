@@ -23,13 +23,25 @@ else
   TOP_ASIC   := lutalm_mul_s8
   DUT_TYPE   := lutalm
   TARGET     := lutalm
-  TRUNC      ?= 4
-  HAS_QUAD_1 := $(shell grep -E "parameter\s+integer\s+QUAD_CURV\s*=\s*1" rtl/lutalm_mul_s8.v 2>/dev/null)
-  ifneq ($(strip $(HAS_QUAD_1)),)
-    QUAD     ?= 1
+  HAS_NANO   := $(shell grep -E "parameter\s+integer\s+MODE\s*=\s*2" rtl/lutalm_mul_s8.v 2>/dev/null)
+  HAS_COMPACT:= $(shell grep -E "parameter\s+integer\s+MODE\s*=\s*1" rtl/lutalm_mul_s8.v 2>/dev/null)
+  ifneq ($(strip $(HAS_NANO)),)
+    MODE     := v9_nano
+    MODE_VAL := 2
+    LOW_W    ?= 1
+    TRUNC    ?= 6
+  else ifneq ($(strip $(HAS_COMPACT)),)
+    MODE     := v9_ultra_compact
+    MODE_VAL := 1
+    LOW_W    ?= 2
+    TRUNC    ?= 6
   else
-    QUAD     ?= 0
+    MODE     := v9_ultra
+    MODE_VAL := 0
+    LOW_W    ?= 2
+    TRUNC    ?= 4
   endif
+  QUAD       ?= 0
 endif
 
 USE_CARRY  ?= 1
@@ -58,8 +70,9 @@ help:
 	@echo "   • Report Directory : $(REPORT_DIR)/"
 	@echo "--------------------------------------------------------------------------------"
 	@echo " Execution Commands (Run individual benchmark stages for this version):"
-	@echo "   make accuracy         Run exhaustive 65,536-case accuracy test (MRED, MED, WCE)"
-	@echo "   make asic             Run Nangate 45nm standard cell synthesis via Yosys"
+	@echo "   make accuracy         Run exhaustive 65,536-case accuracy test (0.2s)"
+	@echo "   make asic             Run Nangate 45nm standard cell synthesis via Yosys (1.8s)"
+	@echo "   make quick-lut        Fast Vivado Synthesis to check LUT & CARRY count (~12s)"
 	@echo "   make fpga             Run AMD Vivado Physical Implementation (P&R, STA, Power)"
 	@echo "   make all              Run all 3 benchmarks sequentially for this version"
 	@echo ""
@@ -99,12 +112,16 @@ info:
 
 accuracy:
 	@mkdir -p $(REPORT_DIR)
-	@echo ">>> [1/3] Running Exhaustive Mathematical Accuracy Verification..."
+	@echo ">>> [1/3] Running Exhaustive Mathematical Accuracy Verification ($(MODE))..."
 	@python3 scripts/verify_accuracy.py \
-		--arch $(ARCH) \
+		--arch $(MODE) \
 		--trunc $(TRUNC) \
 		--quad $(QUAD) \
 		--out $(REPORT_DIR)/accuracy.json
+
+quick-lut:
+	@echo ">>> Fast Vivado Logic Synthesis (Checking LUT & CARRY count in ~12s)..."
+	@vivado -mode batch -notrace -source scripts/quick_synth.tcl 2>/dev/null | grep -E "(Slice LUTs|LUT as Logic|CARRY4)"
 
 asic:
 	@mkdir -p $(REPORT_DIR) build
@@ -121,6 +138,7 @@ fpga:
 	@echo ">>> [3/3] Running AMD Vivado FPGA Implementation ($(TOP_FPGA))..."
 	@TOP_MODULE=$(TOP_FPGA) \
 	 DESIGN_NAME=$(TARGET) \
+	 MODE_VAL=$(MODE_VAL) \
 	 TRUNC_BITS=$(TRUNC) \
 	 QUAD_CURV=$(QUAD) \
 	 USE_CARRY=$(USE_CARRY) \
