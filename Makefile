@@ -15,6 +15,8 @@ ifeq ($(strip $(HAS_LUTALM)),)
   TOP_ASIC   := exact_mul_s8
   DUT_TYPE   := baseline
   TARGET     := baseline
+  MODE       ?= baseline
+  MODE_VAL   ?= 0
   TRUNC      ?= 0
   QUAD       ?= 0
   SIM_DEF    := -d EXACT_BASELINE
