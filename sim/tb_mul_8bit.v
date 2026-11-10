@@ -24,18 +24,23 @@ module tb_mul_8bit;
     reg signed  [7:0]  b_i;
     wire signed [15:0] p_o;
 
-    // DUT Instantiation supporting both Baseline Exact and LUT-ALM Architectures
+    // DUT Instantiation supporting Baseline Exact, Parameterized V9/V10, and Legacy LUT-ALM
 `ifdef EXACT_BASELINE
     exact_mul_s8 dut (
         .a_i(a_i),
         .b_i(b_i),
         .p_o(p_o)
     );
-`else
+`elsif USE_MODE_PARAM
     lutalm_mul_s8 #(
-        .MODE(MODE),
-        .OPERAND_ISOLATION(OPERAND_ISOLATION)
+        .MODE(MODE)
     ) dut (
+        .a_i(a_i),
+        .b_i(b_i),
+        .p_o(p_o)
+    );
+`else
+    lutalm_mul_s8 dut (
         .a_i(a_i),
         .b_i(b_i),
         .p_o(p_o)
