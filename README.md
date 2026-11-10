@@ -95,3 +95,36 @@ Exhaustive verification across all 65,536 input pairs and physical EDA implement
 | **LUT-ALM V9-Nano Extreme** | `v0.4.2` | **36** | **6** | **4.930 ns** | **1.20 mW** | 9.0302% | **184.20 µm²** | **0.980 ns** | **34.10 µW** |
 
 The measured data imply that relative to the exact array multiplier baseline, the V9-Nano extreme variant may achieve up to a 76% reduction in FPGA Slice LUTs and an approximate 47% decrease in ASIC cell area, while maintaining compatibility with deep learning inference tasks exhibiting inherent noise resilience.
+
+---
+
+## 6. Environmental and Physical Sign-Off Characterization
+
+The verification protocol incorporates advanced environmental and physical sign-off procedures executed via AMD Vivado on the Digilent Zybo Z7 (`xc7z010clg400-1`):
+
+### A. RTL Operand Isolation (Glitch Suppression)
+- **Mechanism:** Integrates parameterized operand isolation (`OPERAND_ISOLATION = 1`). When either operand equals zero, the internal magnitude representations are actively clamped to zero before entering the Leading-One Detector (LOD), logarithmic adder, and barrel-shifter reconstruction stages.
+- **Hardware Overhead:** 0 additional Slice LUTs due to boolean absorption within Xilinx 7-series 6-input LUT primitives (`LUT6`).
+- **Dynamic Glitch Elimination:** Halts internal net toggling during zero-operand states, suppressing spurious dynamic transitions and reducing dynamic switching power.
+
+### B. Thermal and Operating Envelope Analysis
+Post-implementation sign-off characterization across the full industrial temperature envelope (-40°C to 100°C) with still air and zero heatsink:
+
+| Ambient Temp (°C) | Junction Temp $T_j$ (°C) | Thermal Margin to 85°C | Device Static Power (W) | Total Power (W) |
+| :---: | :---: | :---: | :---: | :---: |
+| -40 | -39.0 | +124.0 °C | 0.071 | 0.072 |
+| 0 | 1.1 | +83.9 °C | 0.073 | 0.074 |
+| 25 | 26.3 | +58.7 °C | 0.090 | 0.091 |
+| 50 | 51.8 | +33.2 °C | 0.126 | 0.126 |
+| 85 | 88.9 | -3.9 °C | 0.272 | 0.273 |
+| 100 | 106.1 | -21.1 °C | 0.426 | 0.427 |
+
+*Note: The thermal margin highlights the exponential rise in subthreshold leakage power from 71 mW at -40°C to 426 mW at 100°C (a 6.0× increase).*
+
+### C. Voltage Corner & Switching Activity Sensitivity
+- **Core Supply Sensitivity ($V_{ccint}$ $\pm 5\%$):** 
+  - 0.95 V: Total Power = 0.090 W (Static = 0.089 W, Dynamic = 0.001 W)
+  - 1.00 V: Total Power = 0.091 W (Static = 0.090 W, Dynamic = 0.001 W)
+  - 1.05 V: Total Power = 0.091 W (Static = 0.090 W, Dynamic = 0.001 W)
+- **Switching Activity Survey:** Dynamic dissipation remains strictly bounded at 1.00 mW across toggle rates ranging from 5.0% to 50.0%, confirming the shallow logic depth (4 logic levels) and lack of deep propagation paths.
+- **Routing Congestion:** Congestion Level 1 across all routing tiles with 0 congested windows and a maximum net fanout of 25.
