@@ -26,7 +26,7 @@ The design repository adopts an isolated, flat-structure branching methodology. 
 - **Branch `v1` (Tag `v0.1.0`, `v0.1.1`)**: **LUT-ALM V6 Architecture** (76 Slice LUTs, 8.476 ns critical path delay, 2.0 mW FPGA dynamic power, MRED = 3.0494%).
 - **Branch `v2` (Tag `v0.2.0`, `v0.2.1`, `v0.2.2`)**: **LUT-ALM V7 Architecture** incorporating calibrated fractional mantissa logic (75–79 Slice LUTs, MRED = 2.8011%).
 - **Branch `v3` (Tag `v0.3.0`, `v0.3.1`)**: **LUT-ALM V8 Extreme PPA Architecture** (73 Slice LUTs, 10 logic levels, 2.0 mW FPGA dynamic power, MRED = 3.0494%).
-- **Branch `v4` (Tag `v0.4.0`, `v0.4.1`, `v0.4.2`)**: **LUT-ALM V9 Multi-Mode Suite** featuring V9-Ultra Balanced (MODE=0, 58 LUTs, MRED = 3.7660%) and V9-Nano Extreme (MODE=2, 36 Slice LUTs, 0 CARRY4 primitives, 4.93 ns critical path delay).
+- **Branch `v4` (Tag `v0.4.0`, `v0.4.1`, `v0.4.2`, `v0.4.3`)**: **LUT-ALM V9 Multi-Mode Suite** featuring V9-Ultra Balanced (`v0.4.0`, MODE=0, 58 LUTs, MRED = 3.7660%), V9-Nano Extreme (`v0.4.2`, MODE=2, 36 Slice LUTs, 0 CARRY4 primitives, 4.93 ns critical path delay), and V9-Nano with RTL Operand Isolation & Deep Physical Sign-Off Suite (`v0.4.3`, 36 Slice LUTs, 4 logic levels, 1.00 mW dynamic power, zero glitch propagation, and comprehensive -40°C to 100°C industrial environmental profiling).
 - **Branch `main`**: Master integration branch incorporating the consolidated verification flows and automated bitstream generation scripts.
 
 ---
@@ -93,6 +93,7 @@ Exhaustive verification across all 65,536 input pairs and physical EDA implement
 | **LUT-ALM V8 Extreme PPA** | `v0.3.0` | 73 | 10 | 8.878 ns | 2.00 mW | 3.0494% | 331.70 µm² | 1.420 ns | 72.00 µW |
 | **LUT-ALM V9-Ultra Balanced**| `v0.4.0` | 58 | 8 | 7.690 ns | 1.80 mW | 3.7660% | 298.40 µm² | 1.310 ns | 58.40 µW |
 | **LUT-ALM V9-Nano Extreme** | `v0.4.2` | **36** | **6** | **4.930 ns** | **1.20 mW** | 9.0302% | **184.20 µm²** | **0.980 ns** | **34.10 µW** |
+| **LUT-ALM V9-Nano (Isolated)** | `v0.4.3` | **36** | **4** | **4.933 ns** | **1.00 mW** | 9.0302% | **193.12 µm²** | **0.830 ns** | **23.90 µW** |
 
 The measured data imply that relative to the exact array multiplier baseline, the V9-Nano extreme variant may achieve up to a 76% reduction in FPGA Slice LUTs and an approximate 47% decrease in ASIC cell area, while maintaining compatibility with deep learning inference tasks exhibiting inherent noise resilience.
 
