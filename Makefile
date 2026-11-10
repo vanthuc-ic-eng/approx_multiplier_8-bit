@@ -44,8 +44,9 @@ else
   QUAD       ?= 0
 endif
 
-USE_CARRY  ?= 1
-REPORT_DIR ?= reports
+USE_CARRY          ?= 1
+OPERAND_ISOLATION  ?= 1
+REPORT_DIR         ?= reports
 
 # Git Metadata
 GIT_TAG    := $(shell git describe --tags --exact-match 2>/dev/null || echo "")
@@ -128,6 +129,8 @@ asic:
 	@echo ">>> [2/3] Running Nangate 45nm ASIC Synthesis ($(TOP_ASIC))..."
 	@TOP_MODULE=$(TOP_ASIC) \
 	 DESIGN_NAME=$(TARGET) \
+	 MODE_VAL=$(MODE_VAL) \
+	 OPERAND_ISOLATION=$(OPERAND_ISOLATION) \
 	 TRUNC_BITS=$(TRUNC) \
 	 QUAD_CURV=$(QUAD) \
 	 REPORT_DIR=$(REPORT_DIR) \
@@ -139,6 +142,7 @@ fpga:
 	@TOP_MODULE=$(TOP_FPGA) \
 	 DESIGN_NAME=$(TARGET) \
 	 MODE_VAL=$(MODE_VAL) \
+	 OPERAND_ISOLATION=$(OPERAND_ISOLATION) \
 	 TRUNC_BITS=$(TRUNC) \
 	 QUAD_CURV=$(QUAD) \
 	 USE_CARRY=$(USE_CARRY) \
