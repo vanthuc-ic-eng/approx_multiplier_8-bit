@@ -17,12 +17,14 @@ ifeq ($(strip $(HAS_LUTALM)),)
   TARGET     := baseline
   TRUNC      ?= 0
   QUAD       ?= 0
+  SIM_DEF    := -d EXACT_BASELINE
 else
   ARCH       := lutalm
   TOP_FPGA   := lutalm_mul_s8_registered
   TOP_ASIC   := lutalm_mul_s8
   DUT_TYPE   := lutalm
   TARGET     := lutalm
+  SIM_DEF    :=
   HAS_NANO   := $(shell grep -E "parameter\s+integer\s+MODE\s*=\s*2" rtl/lutalm_mul_s8.v 2>/dev/null)
   HAS_COMPACT:= $(shell grep -E "parameter\s+integer\s+MODE\s*=\s*1" rtl/lutalm_mul_s8.v 2>/dev/null)
   ifneq ($(strip $(HAS_NANO)),)
@@ -55,7 +57,7 @@ GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 BIT_FILE   := bitstream/mult_8bit.bit
 
-.PHONY: help all accuracy asic fpga clean \
+.PHONY: help all accuracy sim asic fpga clean \
         report report-accuracy report-func report-asic report-fpga report-timing info \
         bitstream program
 
@@ -71,11 +73,12 @@ help:
 	@echo "   • Report Directory : $(REPORT_DIR)/"
 	@echo "--------------------------------------------------------------------------------"
 	@echo " Execution Commands (Run individual benchmark stages for this version):"
-	@echo "   make accuracy         Run exhaustive 65,536-case accuracy test (0.2s)"
+	@echo "   make sim              Run Vivado xsim RTL simulation across all 65,536 vectors"
+	@echo "   make accuracy         Run exhaustive 65,536-case accuracy test (Python)"
 	@echo "   make asic             Run Nangate 45nm standard cell synthesis via Yosys (1.8s)"
 	@echo "   make quick-lut        Fast Vivado Synthesis to check LUT & CARRY count (~12s)"
 	@echo "   make fpga             Run AMD Vivado Physical Implementation (P&R, STA, Power)"
-	@echo "   make all              Run all 3 benchmarks sequentially for this version"
+	@echo "   make all              Run all benchmarks sequentially for this version"
 	@echo ""
 	@echo " Hardware On-Board Deployment & GUI Commands:"
 	@echo "   make vivado           Open Vivado GUI with mult8bit_v3.xpr project"
@@ -110,6 +113,13 @@ info:
 	@echo "Report Dir      : $(REPORT_DIR)"
 
 # --- 2. Benchmark Execution Targets ---
+
+sim:
+	@mkdir -p $(REPORT_DIR) build
+	@echo ">>> [1/4] Compiling and Running Vivado xsim Simulation (65,536 vectors)..."
+	@xvlog -nolog $(SIM_DEF) rtl/*.v sim/tb_mul_8bit.v
+	@xelab -nolog $(SIM_DEF) -top tb_mul_8bit -s sim_snapshot $(if $(filter baseline,$(ARCH)),,-generic_top "MODE=$(MODE_VAL)" -generic_top "OPERAND_ISOLATION=$(OPERAND_ISOLATION)")
+	@xsim sim_snapshot -nolog -R | tee $(REPORT_DIR)/simulation.log
 
 accuracy:
 	@mkdir -p $(REPORT_DIR)
