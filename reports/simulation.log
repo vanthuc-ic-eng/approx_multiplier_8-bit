@@ -3,7 +3,7 @@
   **** SW Build 5239630 on Fri Nov 08 22:34:34 MST 2024
   **** IP Build 5239520 on Sun Nov 10 16:12:51 MST 2024
   **** SharedData Build 5239561 on Fri Nov 08 14:39:27 MST 2024
-  **** Start of session at: Wed Nov 11 03:04:14 2026
+  **** Start of session at: Wed Nov 11 03:20:14 2026
     ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
     ** Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
@@ -21,20 +21,20 @@ run -all
 --------------------------------------------------------------------------------
  1. FULL INT8 TWO'S COMPLEMENT EVALUATION (65,536 VECTORS: [-128, 127]):
    - Total Tested Vectors   : 65,536
-   - Exact Zero-Error Cases : 768 (1.17 %)
-   - Mean Absolute Err (MED): 567.2703
-   - Mean Relative Err(MRED): 17.1553 %
-   - Worst-Case Error (WCE) : 16384
+   - Exact Zero-Error Cases : 1323 (2.02 %)
+   - Mean Absolute Err (MED): 139.8226
+   - Mean Relative Err(MRED): 7.8184 %
+   - Worst-Case Error (WCE) : 1337
 --------------------------------------------------------------------------------
  2. SYMMETRIC INT8 NEURAL DOMAIN EVALUATION (65,025 VECTORS: [-127, 127]):
    - Total Tested Vectors   : 65025
-   - Exact Zero-Error Cases : 766 (1.18 %)
-   - Mean Absolute Err (MED): 507.4772
-   - Mean Relative Err(MRED): 16.5017 %
-   - Worst-Case Error (WCE) : 4128
+   - Exact Zero-Error Cases : 1259 (1.94 %)
+   - Mean Absolute Err (MED): 139.2462
+   - Mean Relative Err(MRED): 7.8554 %
+   - Worst-Case Error (WCE) : 1337
 ================================================================================
  Verification Status         : PASSED (100% Vector Coverage Sign-off)
 ================================================================================
 $finish called at time : 65546 ns : File "/workspace/projects/mult_8bit/sim/tb_mul_8bit.v" Line 195
 exit
-INFO: [Common 17-206] Exiting xsim at Wed Nov 11 03:04:16 2026...
+INFO: [Common 17-206] Exiting xsim at Wed Nov 11 03:20:16 2026...

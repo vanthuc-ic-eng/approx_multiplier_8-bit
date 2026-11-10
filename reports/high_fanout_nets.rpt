@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2024.2 (lin64) Build 5239630 Fri Nov 08 22:34:34 MST 2024
-| Date         : Wed Nov 11 01:18:52 2026
+| Date         : Wed Nov 11 03:21:54 2026
 | Host         : ic-workstation running 64-bit Ubuntu 24.04.5 LTS
 | Command      : report_high_fanout_nets -fanout_greater_than 5 -max_nets 20 -file reports/high_fanout_nets.rpt
 | Design       : lutalm_mul_s8_registered
@@ -13,26 +13,29 @@ High Fan-out Nets Information
 1. Summary
 ----------
 
-+-----------------+--------+-------------+
-| Net Name        | Fanout | Driver Type |
-+-----------------+--------+-------------+
-| p_o[15]_i_2_n_0 |     26 | LUT1        |
-| a_reg[7]        |     12 | FDCE        |
-| a_reg[4]        |     10 | FDCE        |
-| a_reg[6]        |     10 | FDCE        |
-| p_o[15]_i_3_n_0 |     10 | LUT3        |
-| p_o[15]_i_6_n_0 |     10 | LUT3        |
-| a_reg[5]        |      9 | FDCE        |
-| b_reg[7]        |      9 | FDCE        |
-| sel0[0]         |      8 | LUT3        |
-| sel0[1]         |      8 | LUT5        |
-| b_reg[4]        |      7 | FDCE        |
-| b_reg[6]        |      7 | FDCE        |
-| data1[0]        |      7 | LUT2        |
-| b_reg[5]        |      6 | FDCE        |
-| p_o[15]_i_8_n_0 |      6 | LUT4        |
-| b_reg[3]        |      6 | FDCE        |
-| a_reg[3]        |      6 | FDCE        |
-+-----------------+--------+-------------+
++------------------------------------------------+--------+-------------+
+| Net Name                                       | Fanout | Driver Type |
++------------------------------------------------+--------+-------------+
+| u_core/p_o[15]_i_3_n_0                         |     52 | LUT6        |
+| p_o[15]_i_2_n_0                                |     26 | LUT1        |
+| b_reg[7]                                       |     19 | FDCE        |
+| a_reg[7]                                       |     19 | FDCE        |
+| a_reg__0[0]                                    |     13 | FDCE        |
+| u_core/gen_mode_nano_beyond_the_box.raw_exp[1] |     12 | CARRY4      |
+| b_reg__0[0]                                    |     12 | FDCE        |
+| u_core/gen_mode_nano_beyond_the_box.raw_exp[0] |     12 | CARRY4      |
+| a_reg__0[3]                                    |     11 | FDCE        |
+| u_core/gen_mode_nano_beyond_the_box.raw_exp[2] |     10 | CARRY4      |
+| a_reg__0[1]                                    |     10 | FDCE        |
+| b_reg__0[3]                                    |     10 | FDCE        |
+| b_reg__0[1]                                    |     10 | FDCE        |
+| b_reg__0[2]                                    |      9 | FDCE        |
+| a_reg__0[2]                                    |      9 | FDCE        |
+| u_core/gen_mode_nano_beyond_the_box.raw_exp[3] |      9 | CARRY4      |
+| u_core/p_o[15]_i_5_n_0                         |      8 | LUT3        |
+| u_core/p_o[15]_i_19_n_0                        |      7 | LUT4        |
+| u_core/p_o[15]_i_27_n_0                        |      7 | LUT4        |
+| a_reg__0[4]                                    |      6 | FDCE        |
++------------------------------------------------+--------+-------------+
 
 

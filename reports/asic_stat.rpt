@@ -3,38 +3,38 @@
 
 === lutalm_mul_s8 ===
 
-   Number of wires:                138
-   Number of wire bits:            167
+   Number of wires:                201
+   Number of wire bits:            230
    Number of public wires:           3
    Number of public wire bits:      32
    Number of memories:               0
    Number of memory bits:            0
    Number of processes:              0
-   Number of cells:                145
-     AND2_X1                         8
-     AND3_X1                         5
-     AND4_X1                         1
-     AOI211_X1                       3
-     AOI21_X1                       13
-     AOI221_X1                       5
-     AOI222_X1                       2
-     AOI22_X1                        3
-     INV_X1                          3
-     NAND2_X1                        5
-     NAND3_X1                        4
-     NAND4_X1                        4
-     NOR2_X1                        19
-     NOR3_X1                         9
-     NOR4_X1                         4
-     OAI21_X1                        6
-     OAI221_X1                       8
-     OAI22_X1                        2
-     OAI33_X1                        2
-     OR2_X1                          5
-     OR3_X1                          4
-     OR4_X1                          2
-     XNOR2_X1                       16
-     XOR2_X1                        12
+   Number of cells:                208
+     AND2_X1                         5
+     AND3_X1                         7
+     AND4_X1                         3
+     AOI211_X1                       2
+     AOI21_X1                       12
+     AOI22_X1                        4
+     INV_X1                         13
+     MUX2_X1                         4
+     NAND2_X1                       17
+     NAND3_X1                       10
+     NAND4_X1                        8
+     NOR2_X1                        23
+     NOR3_X1                         4
+     NOR4_X1                         6
+     OAI211_X1                       7
+     OAI21_X1                       17
+     OAI221_X1                       4
+     OAI222_X1                       4
+     OAI22_X1                        8
+     OR2_X1                          6
+     OR3_X1                          8
+     OR4_X1                          5
+     XNOR2_X1                       24
+     XOR2_X1                         7
 
-   Chip area for module '\lutalm_mul_s8': 180.082000
+   Chip area for module '\lutalm_mul_s8': 247.380000
 

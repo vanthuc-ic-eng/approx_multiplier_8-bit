@@ -1,5 +1,5 @@
-Startpoint: b_i[2] (input port clocked by clk)
-Endpoint: p_o[6] (output port clocked by clk)
+Startpoint: a_i[2] (input port clocked by clk)
+Endpoint: p_o[7] (output port clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -8,21 +8,26 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 v input external delay
-   0.00    0.00 v b_i[2] (in)
-   0.14    0.14 v _144_/ZN (OR4_X1)
-   0.20    0.34 ^ _145_/ZN (OAI22_X1)
-   0.01    0.35 v _149_/ZN (NOR3_X1)
-   0.10    0.46 ^ _210_/ZN (OAI33_X1)
-   0.06    0.51 v _213_/ZN (NAND4_X1)
-   0.05    0.56 ^ _216_/ZN (OAI21_X1)
-   0.03    0.59 v _218_/ZN (AOI21_X1)
-   0.09    0.69 ^ _224_/ZN (OAI21_X1)
-   0.01    0.70 v _225_/ZN (NOR2_X1)
-   0.09    0.80 ^ _237_/ZN (AOI221_X1)
-   0.02    0.82 v _240_/ZN (OAI21_X1)
-   0.04    0.85 ^ _241_/ZN (AOI21_X1)
-   0.00    0.85 ^ p_o[6] (out)
-           0.85   data arrival time
+   0.00    0.00 v a_i[2] (in)
+   0.13    0.13 v _220_/ZN (OR4_X1)
+   0.12    0.24 ^ _222_/ZN (NOR4_X1)
+   0.04    0.29 v _224_/ZN (NOR2_X1)
+   0.05    0.33 ^ _250_/ZN (OAI211_X1)
+   0.02    0.36 v _329_/ZN (AOI21_X1)
+   0.12    0.48 v _338_/ZN (OR4_X1)
+   0.03    0.51 ^ _340_/ZN (NAND4_X1)
+   0.02    0.53 v _342_/ZN (AOI21_X1)
+   0.05    0.58 ^ _344_/ZN (OAI21_X1)
+   0.02    0.60 v _347_/ZN (AOI21_X1)
+   0.04    0.64 ^ _348_/ZN (NOR2_X1)
+   0.05    0.69 ^ _361_/ZN (XNOR2_X1)
+   0.02    0.71 v _363_/ZN (NAND2_X1)
+   0.10    0.81 v _374_/ZN (OR3_X1)
+   0.06    0.87 ^ _383_/ZN (OAI222_X1)
+   0.02    0.89 v _384_/ZN (NOR2_X1)
+   0.04    0.92 v _385_/ZN (XNOR2_X1)
+   0.00    0.92 v p_o[7] (out)
+           0.92   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock network delay (ideal)
@@ -31,8 +36,8 @@ Path Type: max
           10.00   data required time
 ---------------------------------------------------------
           10.00   data required time
-          -0.85   data arrival time
+          -0.92   data arrival time
 ---------------------------------------------------------
-           9.15   slack (MET)
+           9.08   slack (MET)
 
 
