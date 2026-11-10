@@ -204,7 +204,9 @@ module lutalm_mul_s8 #(
 
             wire [3:0] exp_w   = log_sum[4:1];
             wire       frac_w  = log_sum[0];
-            wire [5:0] mant_w  = {1'b1, frac_w, 4'b0000}; // 6 bits
+            // Out-of-the-box Zero-Cost Asymmetric Rounding: Tying lower bits to 4'b1111 neutralizes
+            // Mitchell's under-estimation bias, dramatically slashing error with 0 LUT/delay overhead.
+            wire [5:0] mant_w  = {1'b1, frac_w, 4'b1111}; // 6 bits
 
             reg [9:0] raw_trunc;
             always @(*) begin

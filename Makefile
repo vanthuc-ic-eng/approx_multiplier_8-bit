@@ -26,7 +26,7 @@ else
   HAS_NANO   := $(shell grep -E "parameter\s+integer\s+MODE\s*=\s*2" rtl/lutalm_mul_s8.v 2>/dev/null)
   HAS_COMPACT:= $(shell grep -E "parameter\s+integer\s+MODE\s*=\s*1" rtl/lutalm_mul_s8.v 2>/dev/null)
   ifneq ($(strip $(HAS_NANO)),)
-    MODE     := v9_nano
+    MODE     := v10_nano
     MODE_VAL := 2
     LOW_W    ?= 1
     TRUNC    ?= 6
