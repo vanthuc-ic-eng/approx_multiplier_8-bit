@@ -15,8 +15,6 @@ ifeq ($(strip $(HAS_LUTALM)),)
   TOP_ASIC   := exact_mul_s8
   DUT_TYPE   := baseline
   TARGET     := baseline
-  MODE       ?= baseline
-  MODE_VAL   ?= 0
   TRUNC      ?= 0
   QUAD       ?= 0
   SIM_DEF    := -d EXACT_BASELINE
@@ -122,6 +120,14 @@ sim:
 	@xvlog -nolog $(SIM_DEF) rtl/*.v sim/tb_mul_8bit.v
 	@xelab -nolog $(SIM_DEF) -top tb_mul_8bit -s sim_snapshot $(if $(filter baseline,$(ARCH)),,-generic_top "MODE=$(MODE_VAL)" -generic_top "OPERAND_ISOLATION=$(OPERAND_ISOLATION)")
 	@xsim sim_snapshot -nolog -R | tee $(REPORT_DIR)/simulation.log
+	@if [ -f $(REPORT_DIR)/simulation_vectors.csv ]; then \
+		echo ">>> [2/4] Generating Exhaustive 65,536-Vector Excel Lookup Workbooks..."; \
+		python3 scripts/gen_excel_lookup.py \
+			--csv $(REPORT_DIR)/simulation_vectors.csv \
+			--out-vn $(REPORT_DIR)/Bang_tra_cuu_65536_vectors.xlsx \
+			--out-en $(REPORT_DIR)/Vector_Lookup_Table_65536.xlsx \
+			--arch "$(DUT_TYPE) ($(if $(filter baseline,$(ARCH)),Baseline Exact,MODE=$(MODE_VAL)))"; \
+	fi
 
 accuracy:
 	@mkdir -p $(REPORT_DIR)

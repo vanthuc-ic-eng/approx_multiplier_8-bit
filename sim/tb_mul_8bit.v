@@ -24,18 +24,23 @@ module tb_mul_8bit;
     reg signed  [7:0]  b_i;
     wire signed [15:0] p_o;
 
-    // DUT Instantiation supporting both Baseline Exact and LUT-ALM Architectures
+    // DUT Instantiation supporting Baseline Exact, Parameterized V9/V10, and Legacy LUT-ALM
 `ifdef EXACT_BASELINE
     exact_mul_s8 dut (
         .a_i(a_i),
         .b_i(b_i),
         .p_o(p_o)
     );
-`else
+`elsif USE_MODE_PARAM
     lutalm_mul_s8 #(
-        .MODE(MODE),
-        .OPERAND_ISOLATION(OPERAND_ISOLATION)
+        .MODE(MODE)
     ) dut (
+        .a_i(a_i),
+        .b_i(b_i),
+        .p_o(p_o)
+    );
+`else
+    lutalm_mul_s8 dut (
         .a_i(a_i),
         .b_i(b_i),
         .p_o(p_o)
@@ -70,6 +75,8 @@ module tb_mul_8bit;
     real    sym_accuracy_pct;
 
     integer log_file;
+    integer csv_file;
+    integer vec_idx;
 
     initial begin
         // Initialize
@@ -87,6 +94,7 @@ module tb_mul_8bit;
         sym_total_pairs    = 0;
         sym_sum_abs_err    = 0.0;
         sym_sum_rel_err    = 0.0;
+        vec_idx            = 0;
 
         #10;
         $display("================================================================================");
@@ -101,6 +109,11 @@ module tb_mul_8bit;
         $display(" Vector Scope     : Full 65,536 vectors ([-128, 127]) + Symmetric 65,025 ([-127, 127])");
         $display("================================================================================");
 
+        csv_file = $fopen("reports/simulation_vectors.csv", "w");
+        if (csv_file) begin
+            $fdisplay(csv_file, "Index,A,B,P_Exact,P_Approx,Error_Distance,Relative_Error_Pct,Exact_Match");
+        end
+
         // Exhaustive sweep
         for (i = -128; i <= 127; i = i + 1) begin
             for (j = -128; j <= 127; j = j + 1) begin
@@ -112,6 +125,15 @@ module tb_mul_8bit;
                 approx_prod = $signed(p_o);
                 abs_err     = exact_prod - approx_prod;
                 if (abs_err < 0) abs_err = -abs_err;
+
+                if (csv_file) begin
+                    $fdisplay(csv_file, "%0d,%0d,%0d,%0d,%0d,%0d,%0.6f,%0d",
+                        vec_idx, i, j, exact_prod, approx_prod, abs_err,
+                        (exact_prod != 0 ? ((abs_err * 100.0) / (exact_prod < 0 ? -exact_prod : exact_prod)) : 0.0),
+                        (abs_err == 0 ? 1 : 0)
+                    );
+                end
+                vec_idx = vec_idx + 1;
 
                 // 1. Accumulate full 65,536 statistics
                 sum_abs_err = sum_abs_err + abs_err;
@@ -136,6 +158,10 @@ module tb_mul_8bit;
                     end
                 end
             end
+        end
+
+        if (csv_file) begin
+            $fclose(csv_file);
         end
 
         // Compute metrics
