@@ -25,6 +25,11 @@ bitstream/*.rpt
 .Xil/
 .xil/
 hd_visual/
+vivado/*.cache/
+vivado/*.hw/
+vivado/*.ip_user_files/
+vivado/*.runs/
+vivado/*.sim/
 *.jou
 *.log
 *.str

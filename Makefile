@@ -44,8 +44,9 @@ else
   QUAD       ?= 0
 endif
 
-USE_CARRY  ?= 1
-REPORT_DIR ?= reports
+USE_CARRY          ?= 1
+OPERAND_ISOLATION  ?= 1
+REPORT_DIR         ?= reports
 
 # Git Metadata
 GIT_TAG    := $(shell git describe --tags --exact-match 2>/dev/null || echo "")
@@ -55,7 +56,7 @@ GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BIT_FILE   := bitstream/mult_8bit.bit
 
 .PHONY: help all accuracy asic fpga clean \
-        report report-accuracy report-asic report-fpga report-timing info \
+        report report-accuracy report-func report-asic report-fpga report-timing info \
         bitstream program
 
 # Default target
@@ -76,12 +77,16 @@ help:
 	@echo "   make fpga             Run AMD Vivado Physical Implementation (P&R, STA, Power)"
 	@echo "   make all              Run all 3 benchmarks sequentially for this version"
 	@echo ""
-	@echo " Hardware On-Board Deployment Commands:"
+	@echo " Hardware On-Board Deployment & GUI Commands:"
+	@echo "   make vivado           Open Vivado GUI with mult8bit_v3.xpr project"
+	@echo "   make schematic        Directly launch Vivado GUI and display RTL Schematic"
+	@echo "   make vivado-proj      Re-generate the Vivado .xpr project file"
 	@echo "   make bitstream        Build physical .bit file for Digilent Zybo Z-7010 board"
 	@echo "   make program          1-Click JTAG flash bitstream directly to board hardware"
 	@echo ""
 	@echo " Report Inspection Commands (View specific metrics of this version):"
 	@echo "   make report           Display consolidated benchmark summary card"
+	@echo "   make report-func      Generate official functional verification report (.md, .docx, .csv)"
 	@echo "   make report-accuracy  Display MRED, Mean Error (MED), and Worst-Case Error"
 	@echo "   make report-asic      Display standard cell count and Nangate 45nm silicon area"
 	@echo "   make report-fpga      Display Slice LUTs, CARRY4, Levels, Delay, Fmax, Power"
@@ -124,6 +129,8 @@ asic:
 	@echo ">>> [2/3] Running Nangate 45nm ASIC Synthesis ($(TOP_ASIC))..."
 	@TOP_MODULE=$(TOP_ASIC) \
 	 DESIGN_NAME=$(TARGET) \
+	 MODE_VAL=$(MODE_VAL) \
+	 OPERAND_ISOLATION=$(OPERAND_ISOLATION) \
 	 TRUNC_BITS=$(TRUNC) \
 	 QUAD_CURV=$(QUAD) \
 	 REPORT_DIR=$(REPORT_DIR) \
@@ -135,6 +142,7 @@ fpga:
 	@TOP_MODULE=$(TOP_FPGA) \
 	 DESIGN_NAME=$(TARGET) \
 	 MODE_VAL=$(MODE_VAL) \
+	 OPERAND_ISOLATION=$(OPERAND_ISOLATION) \
 	 TRUNC_BITS=$(TRUNC) \
 	 QUAD_CURV=$(QUAD) \
 	 USE_CARRY=$(USE_CARRY) \
@@ -144,7 +152,16 @@ fpga:
 
 all: accuracy asic fpga report
 
-# --- 3. Hardware Deployment Targets ---
+# --- 3. Hardware Deployment & Vivado GUI Targets ---
+
+vivado-proj:
+	@vivado -mode batch -source scripts/create_vivado_project.tcl
+
+vivado: vivado/mult8bit_v3.xpr
+	@vivado vivado/mult8bit_v3.xpr &
+
+schematic:
+	@vivado -mode gui -source scripts/open_schematic.tcl &
 
 bitstream:
 	@bash scripts/build_bitstream.sh $(DUT_TYPE)
@@ -153,6 +170,9 @@ program:
 	@bash scripts/program_fpga.sh $(BIT_FILE)
 
 # --- 4. Report Inspection Targets ---
+
+report-func:
+	@python3 scripts/generate_functional_report.py --arch $(TARGET) --trunc $(TRUNC) --quad $(QUAD)
 
 report-accuracy:
 	@python3 scripts/parse_summary.py --dir $(REPORT_DIR) --show accuracy

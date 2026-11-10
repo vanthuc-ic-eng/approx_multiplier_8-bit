@@ -12,6 +12,8 @@ cd "${ROOT_DIR}"
 
 TOP_MODULE="${TOP_MODULE:-exact_mul_s8}"
 DESIGN_NAME="${DESIGN_NAME:-baseline}"
+MODE_VAL="${MODE_VAL:-2}"
+OPERAND_ISOLATION="${OPERAND_ISOLATION:-1}"
 TRUNC_BITS="${TRUNC_BITS:-4}"
 QUAD_CURV="${QUAD_CURV:-0}"
 REPORT_DIR="${REPORT_DIR:-reports}"
@@ -45,6 +47,12 @@ mapfile -t RTL_FILES < <(find rtl -maxdepth 1 -type f -name "*.v" ! -name "top_b
     if [ "${TOP_MODULE}" != "exact_mul_s8" ]; then
         TOP_FILE=$(grep -l -E "\bmodule\s+${TOP_MODULE}\b" "${RTL_FILES[@]}" 2>/dev/null | head -n 1 || true)
         if [ -n "${TOP_FILE}" ] && [ -f "${TOP_FILE}" ]; then
+            if grep -q "parameter.*MODE" "${TOP_FILE}"; then
+                CHPARAMS="${CHPARAMS} -chparam MODE ${MODE_VAL}"
+            fi
+            if grep -q "parameter.*OPERAND_ISOLATION" "${TOP_FILE}"; then
+                CHPARAMS="${CHPARAMS} -chparam OPERAND_ISOLATION ${OPERAND_ISOLATION}"
+            fi
             if grep -q "parameter.*TRUNC_BITS" "${TOP_FILE}"; then
                 CHPARAMS="${CHPARAMS} -chparam TRUNC_BITS ${TRUNC_BITS}"
             fi
